@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://earth.google.com/kml/2.2">
+<Document>
+  <name>Western Province Mapping</name>
+  <description><![CDATA[]]></description>
+  <NetworkLink>
+    <name>Western Province Mapping</name>
+    <Link>
+      <href>http://www.google.com/maps/ms?ie=UTF8&amp;hl=en&amp;vps=2&amp;jsv=260d&amp;oe=UTF8&amp;msa=0&amp;msid=106132774979353007891.00048cb02af29f982b921&amp;output=kml</href>
+    </Link>
+  </NetworkLink>
+</Document>
+</kml>

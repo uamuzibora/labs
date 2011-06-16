@@ -1,0 +1,555 @@
+<!-- Contains all functions to display input forms, plots and tables -->
+<%!
+	import config
+%>
+
+<%def name="count_table(data)">
+<!-- Makes the count table -->
+	<table>
+	<tr><td></td>
+	<%
+	i=0
+	xaxis=data.xaxis()
+	p=data.probability()
+	       
+	data=data.numbers()
+	
+	
+	%>
+	%for k in sorted(data.keys()):
+		<td>${k}</td>
+	%endfor
+	%if p!=False:
+		<td> P-Value</td>
+	%endif
+	</tr>
+	%while i<len(xaxis):
+		<tr><td>${xaxis[i]}</td>
+		%for k in sorted(data.keys()):
+		<td>${data[k][i]}</td>
+		%endfor
+		%if p!=False:
+		<td>${p[xaxis[i]]}</td>
+		%endif
+		</tr>
+		<%
+		i+=1
+		%>
+	%endwhile
+
+	</table>
+</%def>
+<%def name="count_form(date,variables)">
+<%
+   numeric=[]
+   numeric_mult=[]
+   for v in variables:
+       if v[2]=="numeric" or v[2]=="numeric_expression" :
+           numeric.append(v[0])
+       elif v[2]=="numeric_multiple":
+           numeric_mult.append(v[0])
+%>
+<script type="text/javascript">
+var num=1;
+
+var numeric={'${"':1,'".join(numeric)}':1}
+var numeric_multiple={'${"':1,'".join(numeric_mult)}':1}
+var value_numeric={}
+function ShowCount(group, new_group)
+{
+        var value=document.getElementById('countgroup'+group).value;
+        if (new_group!=0){
+            document.getElementById('countgroup'+new_group).style.display='inline';
+        }
+ 
+        if (value in numeric){
+            document.getElementById('countcutoff'+group).style.display='inline';
+            document.getElementById('countcalc'+group).style.display='None';
+            
+	}
+        else if (value in numeric_multiple){
+            document.getElementById('countcutoff'+group).style.display='inline';
+            document.getElementById('countcalc'+group).style.display='inline';
+            
+	}
+       else{
+            document.getElementById('countcutoff'+group).style.display='None';
+            document.getElementById('countcalc'+group).style.display='None';
+       }
+}
+</script>
+<form action="${config.webroot}count" method="POST">
+Time period:
+${date_select('start',date=date)}
+to
+${date_select('end')}
+<br />
+	Group by:
+                <select name="group" id="countgroup1" onChange="javascript:ShowCount(1,2)" >
+		<option value=''>Choose a group</option>
+		%for option in variables:
+		<option value="${option[0]}">${option[1]}</option>
+		%endfor
+		</select>
+	
+		<select name="group" style="display: none;" id="countgroup2" onChange="javascript:ShowCount(2,3)" >
+		<option value=''>Choose a group</option>
+		%for option in variables:
+		<option value="${option[0]}">${option[1]}</option>
+		%endfor
+		</select>
+		<select name="group" style="display: none;" id="countgroup3" onChange="javascript:ShowCount(3,0)" >
+		<option value=''>Choose a group</option>
+		%for option in variables:
+		<option value="${option[0]}">${option[1]}</option>
+		%endfor
+		</select>
+	
+	<br />
+	<input type="text" name="cutoff" id="countcutoff1" style="display: none;"> ${calculation("calc",id="countcalc1",style="None")} <br />
+	<input type="text" name="cutoff" id="countcutoff2" style="display: none;"> ${calculation("calc",id="countcalc2",style="None")}<br />
+	<input type="text" name="cutoff" id="countcutoff3" style="display: none;"> ${calculation("calc",id="countcalc3",style="None")}
+	<br />
+
+	<input type="submit" value="Count" />
+</form>
+
+
+</%def>
+
+<%def name="calculation(na,id='calc',style='inline')">
+
+	<select name="${na}" id="${id}" style="display: ${style};" >
+	  <option value='First'>First</option>
+	  <option value='Last'>Last</option>
+	  <option value='Mean'>Mean</option>
+	  <option value='Regression'>Regression</option>
+	</select>
+
+</%def>
+
+<%def name="scatter_form()">
+<form action="${config.webroot}scatter" method="POST">
+
+	%for i in range(2):
+		<select name="variables">
+		<option value=''>Choose a group</option>
+		%for option in content['variables']:
+			% if 'numeric' in option[2]:
+				<option value="${option[0]}">${option[1]}</option>
+			%endif
+		%endfor
+		</select>
+
+	%endfor
+	
+	<br />
+	${calculation("calc")}
+	${calculation("calc")}
+	<input type="submit" value="Scatter" />
+
+</form>
+
+</%def>
+
+<%def name="compare_form(variables)">
+<%
+   numeric=[]
+   numeric_mult=[]
+   for v in variables:
+       if v[2]=="numeric" or v[2]=="numeric_expression" :
+           numeric.append(v[0])
+       elif v[2]=="numeric_multiple":
+           numeric_mult.append(v[0])
+%>
+<script type="text/javascript">
+var num=1;
+
+var numeric={'${"':1,'".join(numeric)}':1}
+var numeric_multiple={'${"':1,'".join(numeric_mult)}':1}
+var value_numeric={}
+function ShowCompare(group, new_group)
+{
+        var value=document.getElementById('comparegroup'+group).value;
+        if (new_group!=0){
+            document.getElementById('comparegroup'+new_group).style.display='inline';
+        }
+ 
+        if (value in numeric){
+            document.getElementById('comparecutoff'+group).style.display='inline';
+            document.getElementById('comparecalc'+group).style.display='None';
+            
+	}
+        else if (value in numeric_multiple){
+            document.getElementById('comparecutoff'+group).style.display='inline';
+            document.getElementById('comparecalc'+group).style.display='inline';
+            
+	}
+       else{
+            document.getElementById('comparecutoff'+group).style.display='None';
+            document.getElementById('comparecalc'+group).style.display='None';
+       }
+}
+function Variable()
+{
+       var value=document.getElementById('variable').value;
+       if (value in numeric_multiple){
+ 
+            document.getElementById('calcvariable').style.display='inline';
+            
+	}else{
+           
+            document.getElementById('calcvariable').style.display='None';
+       }
+}
+</script>
+<form action='${config.webroot}compare' method='POST'>
+	Group by:
+	
+	<select name="group" id="comparegroup1" onChange="javascript:ShowCompare(1,2)" >
+	  <option value=''>Choose a group</option>
+	  %for option in content['variables']:
+		<option value="${option[0]}">${option[1]}</option>
+	  %endfor
+	</select>
+	<select name="group" id="comparegroup2" style="display: none;" onChange="javascript:ShowCompare(2,0)" >
+	  <option value=''>Choose a group</option>
+	  %for option in content['variables']:
+		<option value="${option[0]}">${option[1]}</option>
+	  %endfor
+	</select>
+	<br />
+	<input type="text" name="cutoff" id="comparecutoff1" style="display: none;" > ${calculation("calc",id="comparecalc1", style="none")} <br />
+	<input type="text" name="cutoff" id="comparecutoff2" style="display: none;" > ${calculation("calc",id="comparecalc2", style="none")}
+	<br />
+	Numeical value:
+	<select name="variables" id="variable" onChange="javascript:Variable()">
+	<option value=''>Choose a Variable</option>
+	%for option in content['variables']:
+		% if 'numeric' in option[2]:
+			<option value="${option[0]}">${option[1]}</option>
+		%endif
+	%endfor
+	</select>
+
+	${calculation("calcvariable",id="calcvariable", style="none")}
+	<br />
+	<input type="submit" value="Compare" />
+</form>	
+
+
+</%def>
+
+<%def name="count_chart(data,active='bar_chart',number=1)">
+<a href="#" onClick="pie_chart(${number})">Pie Chart</a> <a href="#" onClick="bar_chart(${number})">Bar Chart</a> 
+<a href="#" onClick="timeline(${number})">Timeline</a>
+
+
+	<div id="container${number}" style="width:900px;height:400px;"></div>
+	<%
+		import time,calendar
+		series={};
+		labels=[];
+		numbers=data.numbers();
+	        x_shift=1/float(len(numbers.keys()))
+		x=0
+		piechart=[0 for i in range(len(numbers[numbers.keys()[0]]))]
+
+		
+		for serie in sorted(numbers.keys()):
+			values_str='[';
+			i=0
+				
+			for v in numbers[serie]:
+				piechart[i]+=v
+				values_str+='['+str(i+x)+','+str(v)+'],'
+				i+=1
+			values_str=values_str[0:-1]+']'
+			series[serie]=values_str
+			x+=x_shift
+	
+		
+		label_str='[';
+		i=0;
+		xaxis=data.xaxis()
+		length=len(xaxis)
+		if x_shift==1:
+			label_shift=1
+		else:
+			label_shift=x_shift
+		for v in xaxis:
+			label_str+='['+str(i+0.5-x_shift/2.)+',"'+str(v)+'"],'
+			i+=1
+		label_str=label_str[0:-1]+']'
+		
+		#Fixing the timeline
+		timedata=data.timeline_numbers()
+		dates=data.timeline_xaxis()
+		new_dates=[]
+		timeseries={}
+		for d in dates:
+	                new_dates.append(calendar.timegm(d)*1000)
+		
+		for serie in sorted(timedata.keys()):
+			values_str='[';
+			i=0
+			for v in timedata[serie]:
+				values_str+='['+str(new_dates[i])+','+str(v)+'],'
+				i+=1
+			values_str=values_str[0:-1]+']'
+			timeseries[serie]=values_str
+				
+
+
+			
+	
+	%>
+		<script type="text/javascript">
+			/**
+			 * Wait till dom's finished loading.
+			 */
+			document.observe('dom:loaded',${active}(${number}));
+
+			function bar_chart(number)
+			{
+				/**
+				 * Fill series d1 and d2.
+				 */
+
+			    
+				/**
+				 * Draw the graph.
+				 */
+					var f = Flotr.draw($('container'+number),[
+						<%
+						prefix='';
+						%>
+						%for s in sorted(series.keys()):
+						${prefix}{data:${series[s]}, label:'${s}'}
+							<%
+							prefix=','
+							%>
+						
+						%endfor
+						] ,
+						{
+						bars: {show:true, barWidth:${x_shift}},
+						xaxis:{
+							ticks: ${label_str},
+							min: -0.5,
+							max: ${length},
+							
+							autoscaleMargin: 1
+
+				
+							},
+							HtmlText: false,
+						yaxis:{min:0, autoscaleMargin: 1}
+						}
+
+				);
+			}
+			function pie_chart(number)
+			{
+				// Fill series.
+				<%
+				i=0
+				
+				%>
+				%while i< len(piechart):
+					var d${i}=[[0,${piechart[i]}]]
+					<%
+					i+=1
+					%>
+				%endwhile
+	
+				//Draw the graph.
+				var f = Flotr.draw($('container'+number), [
+				<%
+				i=0
+				prefix=''
+				%>
+
+				%while i< len(piechart):
+				${prefix}{data:d${i},label: '${xaxis[i]}'}
+					<%
+					i+=1
+					prefix=',';
+					%>
+				%endwhile
+
+				 ], {
+				HtmlText: false, 
+				grid: {
+				verticalLines: false, 
+				horizontalLines: false
+				},
+				xaxis: {showLabels: false},
+				yaxis: {showLabels: false}, 
+				pie: {show: true}	});
+			}
+			function timeline(number)
+			{	/**
+				 * Fill series d1.
+				 */
+				<%
+				prefix='';
+				%>
+				var f=Flotr.draw($('container'+number),[ 
+
+				%for s in sorted(timeseries.keys()):
+					${prefix}{data:${timeseries[s]}, label:'${s}'}
+					<%
+					prefix=','
+					%>
+				%endfor
+
+				],{
+				xaxis:{
+					mode:'time', 
+					labelsAngle:45
+				},
+				selection: {
+					mode: 'x'
+				},
+				HtmlText: false
+				});
+			}
+	
+
+		</script>
+
+		
+		<!-- analytics -->
+
+	
+</%def>
+
+
+<%def name="scatter_plot(scatter)">
+	<%
+	x,y,cor=scatter.numbers();
+	values_str='[';
+	
+	for i in range(len(x)):				
+		values_str+='['+str(y[i])+','+str(x[i])+'],'
+	values_str=values_str[0:-1]+']'
+	xlabel,ylabel=scatter.labels()
+	%>
+	<div id="container" style="width:900px;height:400px;"></div>
+	<script type="text/javascript">
+	document.observe('dom:loaded', function(){
+	 
+	/**
+	 * Draw the graph.
+	 */
+	var f = Flotr.draw(
+		$('container'),[ 
+			{data:${values_str}, lines:{show:false},points:{show:true}}
+
+		],{
+            title: 'Scatter plot',
+            subtitle:'${xlabel} vs ${ylabel}'
+	});
+	});			
+	</script>
+</%def>
+<%def name="comparison_table(compare)">
+	<%
+	mean,p_value,N=compare.numbers()
+	subgroups=compare.labels()
+	%>
+
+	
+	<table>
+	<tr><td></td><td>N</td><td>Mean</td><td>P-value</td>
+
+	%for i in range(len(mean)):
+		<tr><td>${subgroups[i]}</td>
+		  <td>${N[i]}</td>
+		  %if type(mean[i])==float:
+		               <td>${"%2.1f" % mean[i]}</td>
+			       %else:
+			       <td>${"%2.1f" % mean[i]}</td>
+		  %endif
+		  %if type(p_value[i])==float:
+			        %if p_value[i]<0.05:
+						<b>
+				%endif 
+		               <td>${"%2.3f" % p_value[i]}</td>
+			       %else:
+			       <td>${"%2.4f" % p_value[i]}</td>
+			       %if p_value[i]<0.05:
+						</b>
+					
+			       %endif
+		%endif
+		</tr>
+	%endfor
+	
+	</table>
+</%def>
+
+<%def name="date_select(name, date='today')">	
+	<%
+	import datetime
+
+	if date=='today':
+		date=datetime.date.today()
+
+	%>
+	
+	<select name="${name}_day">
+	%for i in range(1,32):
+		<%
+		if i<10:
+			v='0'+str(i)
+			
+		else:
+			v=i
+		
+		%>
+		%if i==date.day:
+			<option value="${v}" selected="selected">${i}</option>
+		
+		%else:
+			<option value="${v}">${i}</option>
+
+		%endif
+	%endfor
+	</select>
+	<select name="${name}_month">
+	%for i in range(1,13):
+		<%
+		if i<10:
+			v='0'+str(i)
+			
+		else:
+			v=i
+		
+		%>
+		%if i==date.month:
+			<option value="${v}" selected="selected">${datetime.datetime.strftime(datetime.datetime.strptime(str(i),"%m"),"%B")}</option>
+		
+		%else:
+			<option value="${v}">${datetime.datetime.strftime(datetime.datetime.strptime(str(i),"%m"),"%B")}</option>
+		%endif
+	%endfor
+	</select>
+	<select name="${name}_year">
+	%for i in range(1990,2013):
+
+		%if i==date.year:
+			<option value="${i}" selected="selected">${i}</option>
+		
+		%else:
+			<option value="${i}">${i}</option>
+		%endif
+	%endfor
+	</select>
+
+</%def>
+
+
+
+

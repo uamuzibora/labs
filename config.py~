@@ -1,0 +1,3 @@
+webroot='http://localhost/'
+output_path='/var/www/labs/output'
+path='/var/www/labs/'

@@ -1,0 +1,13 @@
+<%namespace name="util" file="functions.html" />
+<%include file="header.html" />
+<h2> VF report</h2>
+${util.count_table(content[0])}
+${util.count_chart(content[0])}
+<br />
+${util.count_chart(content[0], active='pie_chart',number=2)}
+<br />
+${util.count_chart(content[1], active='timeline',number=3)}
+<br />
+${util.comparison_table(content[2])}
+<%include file="footer.html" />
+

@@ -1,0 +1,21 @@
+GUI:
+Layout
+User-friendly (Make input fields appear when needed)
+Layout and prettyfing of pdf( Look at image quality)
+What do to with when grouping by a variable with very many options( Eg Patient Source). For both on website and pdfs. 
+
+
+Look at the statistics of using many t-tests simultaneously in the compare functionality
+
+Features:
+Groups for scatter plots
+When grouping with multiple groups allow option of only displaying one against all others
+Histogram: distribution of a numeric variable
+Data types: Frequency for all multiple values with condition (eg frequency of malaria)
+     	    Boolean type: Have a patient had an oppertunistic infection or not
+	    Time between changes. Eg time between who staus changes
+	    Time to reach threshold. Eg. time before CD4 reaches 350 
+
+MAYBE IN THE FUTURE:
+mapping
+chossing one CCC or groups of CCC's

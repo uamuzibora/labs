@@ -1,0 +1,8 @@
+<%namespace name="util" file="functions.html" />
+<%include file="header.html" />
+<h2> Scatter </h2>
+
+${util.scatter_plot(content)}
+The correlation between ${content.labels()[0]} and ${content.labels()[1]} is ${content.numbers()[2]}
+<%include file="footer.html" />
+

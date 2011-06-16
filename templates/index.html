@@ -1,0 +1,21 @@
+<%namespace name="util" file="functions.html" />
+<%include file="header.html"/>
+<%!
+	import config
+%>
+Some diffrent ways to look at the data <br />
+%if "error" in content.keys():
+    <h2> ERROR </h2>
+    <p>${content["error"]}</p>
+%endif
+<h2> Counting Statistics</h2>
+${util.count_form(content['date'],content['variables'])}
+
+<h2> Scatter Plot </h2>
+${util.scatter_form()}
+<h2> Compare numerical values </h2>
+${util.compare_form(content['variables'])}
+
+<a href="${config.webroot}pdf"><h2> Generate a pdf report</h2></a>
+
+<%include file="footer.html"/>

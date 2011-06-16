@@ -1,0 +1,193 @@
+<%namespace name="util" file="functions.html" />
+<%include file="header.html" />
+<%!
+	import config
+%>
+<%
+	max_number_of_items=6
+%>
+<script type="text/javascript">
+function save()
+{
+document.getElementById('action').value='save'
+}
+function showItems(number)
+{
+
+var item='item';
+var max=${max_number_of_items};
+//starting at one, loop through until the number chosen by the user
+	for(i = 1; i <= number; i++){
+	
+	//change visibility to block, or 'visible'
+	document.getElementById(item+i).style.display = 'block';
+                }
+	//make a number one more than the number inputed
+
+	for(i=parseInt(number)+1;i<=max;i++){
+		
+		//hide 
+		document.getElementById(item+i).style.display = 'none';
+
+	}
+}
+function showType(type,idNumber)
+{
+	var t;
+	var types=new Array('count','scatter','compare');
+	for (t in types){
+		
+		
+		if (types[t]==type){
+			
+			document.getElementById(types[t]+idNumber).style.display='block';
+		}else{
+			
+			document.getElementById(types[t]+idNumber).style.display='none';
+		}
+	}
+
+}
+</script>
+<h2> Report generating</h2>
+Load a saved report template
+<form action="${config.webroot}generate_saved_report" method='POST'>
+<select name="report">
+%for report in content['reports']:
+	<option value="${report}">${report}</option>
+%endfor
+</select>
+<input type="submit" value="Generate Report" />
+</form>
+How many items in the report?
+<form action="${config.webroot}generate_report" method='POST'>
+Title:
+<input type="text" name="title"/>
+<select name="number" id="number" onChange="javascript: showItems(document.getElementById('number').value);">
+<option value='0'>Number of items</option>
+%for i in range(1,max_number_of_items+1):
+	<option value="${i}">${i}</option>
+%endfor
+</select>
+%for n in range(1,max_number_of_items+1):
+
+	<div id='item${n}' style="display: none;">
+		<select name="type${n}" id="type${n}" onChange="javascript: showType(document.getElementById('type${n}').value,${n});">
+			<option value="" selected="yes">Choose type of statistics</option>
+			<option value="count"> Counting Statistics</option>
+			<option value="scatter"> Scatter plot</option>
+			<option value="compare"> Comparison</option>
+		</select>
+		<div id='count${n}' style="display: none;">
+			<select name='counttype${n}'>
+				<option value='table'>Table</option>
+				<option value='bar_chart'>Bar Chart</option>
+				<option value='pie_chart'>Pie Chart</option>
+				<option value='timeline'>Timeline</option>
+			</select>
+			Time period:
+			${util.date_select('countstart'+str(n),date=content['date'])}
+			to
+			${util.date_select('countend'+str(n))}
+			<br />
+			Group by:
+			%for i in range(3):
+				<select name="countgroup${n}">
+				<option value=''>Choose a group</option>
+				%for option in content['variables']:
+					<option value="${option[0]}">${option[1]}</option>
+					%endfor
+				</select>
+				%endfor
+			<br />
+			<input type="text" name="countcutoff${n}">
+			<input type="text" name="countcutoff${n}">
+			<input type="text" name="countcutoff${n}">
+
+			<select name='countcalc${n}'>
+				<option value='First'>First</option>
+				<option value='Last'>Last</option>
+				<option value='Mean'>Mean</option>
+				<option value='Regression'>Regression</option>
+			</select>
+		</div>
+		<div id='scatter${n}' style="display: none;">
+			
+			%for i in range(2):
+				<select name="scattervariables${n}">
+				<option value=''>Choose a group</option>
+				%for option in content['variables']:
+					% if 'numeric' in option[2]:
+						<option value="${option[0]}">${option[1]}</option>
+					%endif
+				%endfor
+				</select>
+
+			%endfor
+	
+			<br />
+			<select name='scattercalc${n}'>
+				<option value='First'>First</option>
+				<option value='Last'>Last</option>
+				<option value='Mean'>Mean</option>
+				<option value='Regression'>Regression</option>
+			</select>
+			<select name='scattercalc${n}'>
+				<option value='First'>First</option>
+				<option value='Last'>Last</option>
+				<option value='Mean'>Mean</option>
+				<option value='Regression'>Regression</option>
+			</select>
+		</div>
+		<div id='compare${n}' style="display: none;">
+			Group by:
+			%for i in range(2):
+				<select name="comparegroup${n}">
+				<option value=''>Choose a group</option>
+				%for option in content['variables']:
+					<option value="${option[0]}">${option[1]}</option>
+				%endfor
+				</select>
+			%endfor
+			<input type="text" name="comparecutoff${n}">
+			<input type="text" name="comparecutoff${n}">
+			<br />
+			Numeical value:
+			<select name="comparevariables${n}">
+				<option value=''>Choose a group</option>
+				%for option in content['variables']:
+					% if 'numeric' in option[2]:
+						<option value="${option[0]}">${option[1]}</option>
+					%endif
+				%endfor
+			</select>
+			<select name='comparecalc${n}'>
+				<option value='First'>First</option>
+				<option value='Last'>Last</option>
+				<option value='Mean'>Mean</option>
+				<option value='Regression'>Regression</option>
+			</select>
+			<select name='comparecalc${n}'>
+				<option value='First'>First</option>
+				<option value='Last'>Last</option>
+				<option value='Mean'>Mean</option>
+				<option value='Regression'>Regression</option>
+			</select>
+	
+			<select name='comparecalcvariable${n}'>
+				<option value='First'>First</option>
+				<option value='Last'>Last</option>
+				<option value='Mean'>Mean</option>
+				<option value='Regression'>Regression</option>
+			</select>
+		</div>
+	
+	</div>
+%endfor
+<br />
+<input type="hidden" name="action" id="action" value="generate">
+<input type="submit" onClick="javascript: save();" value="Save report template" />
+<input type="submit" value="Generate report" />
+</form>
+
+<%include file="footer.html" />

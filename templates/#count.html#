@@ -1,0 +1,7 @@
+<%namespace name="util" file="functions.html" />
+<%include file="header.html" />
+<h2> Counting </h2>
+${util.count_table(content)}
+${util.count_(content)}
+<%include file="footer.html" />
+
