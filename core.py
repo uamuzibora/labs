@@ -7,8 +7,12 @@ import sys
 import time,calendar
 #importing dbConfig
 import db
-from dbConfig import *
-import config
+try:
+    from dbConfig import *
+    import config
+except:
+    print "config.py and dbConfig.py are needed. Fill out a copy of the config-default and dbConfig-default and make a copy as config.py and dbConfig.py"
+    sys.exit(0)
 path=config.path
 #functions
 
@@ -82,12 +86,27 @@ def query(fields):
             for r in res:
                 data[r["pid"]][f]={'Mean':r['avg'],'First':r['first'], 'Last':r['last'],'Regression':r['regr_slope']};
                 if data[r["pid"]][f]['Regression'] !=None:
-                   data[r["pid"]][f]['Regression']*= (3600*24*30.41) 
+                   data[r["pid"]][f]['Regression']*= (3600*24*30.41)
+        elif variables[f]['type']=='numeric_occurrence':
+
+            res=db.query_dict("SELECT pid,count(id),min(test_performed),max(test_performed) FROM results WHERE test_id= %s GROUP BY pid",id)
+            
+            for r in res:
+
+                #find numer of days between min and max
+                data[r["pid"]][f]={'Count':int(r['count']),'Interval':None}
+                if r['count'] !=0:
+                    days=(r['max']-r["min"]).days
+                    if days!=0:
+                        data[r['pid']]['Interval']=days/float(r['count'])
+               
+
+                    
                     
         else:
 
             for p in patients:
-                values=db.query_dict("Select id,result_id,value_decimal,value_text,value_lookup,results.test_performed from result_value LEFT JOIN results on result_values.result_id=results.id where results.pid=%s and results.test_id=%s",(p,id))                      		
+                values=db.query_dict("Select result_values.id,result_id,value_decimal,value_text,value_lookup,results.test_performed from result_values LEFT JOIN results on result_values.result_id=results.id where results.pid=%s and results.test_id=%s",(p,id))                      		
                 
                 for v in values:
                     if v['value_decimal']!=None:
@@ -108,9 +127,14 @@ def query(fields):
             for r in res:
                 lookups[v][r['id']]=r['name']
     for d in data:
+        
         for f in result_fields:
             if f not in data[d].keys():
-                data[d][f]={'Mean':None,'First':None, 'Last':None,'Regression':None};
+                if variables[f]['type']=='numeric_multiple':
+                    data[d][f]={'Mean':None,'First':None, 'Last':None,'Regression':None};
+                if variables[f]['type']=='numeric_occurrence':
+                    
+                    data[d][f]={'Count':0,'Interval':None}
         for val in data[d].keys():
             if val in lookups.keys():
                 numb=data[d][val];
@@ -196,7 +220,8 @@ def list_variables():
 
 
 if __name__=='__main__':
-    print query(['age'])
     print list_variables()
+    print query(['cd4'])
+
 
 

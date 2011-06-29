@@ -2,19 +2,25 @@ The following python packages are need to successfully run uamuzibora labs:
 
 The easiest way to install them all is to get hold of easy_install (http://pypi.python.org/pypi/setuptools)
 
-Mako
-numpy
-scipy
-matplotlib
+Install all of these packages with the install_packages.py script
+mako
 pisa
 reportlab
 html2pdf
-pygresql 
 flup
 psycopg2
 
+Install without using easy-install (debian/ubuntu pacakge name)
+scipy (python-scipy)
+numpy (python-numpy)
+matplotlib (python-matplotlib)
 
-A sample lighttp config file is included. Run the program by running the webroot/index.py file. 
 
-The dbConfig file needs to be changed to reflect your database setup.
+The dbConfig.py and config.py files needs to be changed to reflect your setup. See config-default.py and dbConfig-default.py.
+
 Then the aggregate.sql file needs to be run on the database to create some sql aggregate functions used.
+
+A sample lighttp config file is included. Start the webserver by:
+"sh start.sh start"
+
+

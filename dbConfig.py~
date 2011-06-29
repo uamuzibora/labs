@@ -1,4 +1,0 @@
-host="localhost"
-login='postgres'
-password="postgres"
-database='uamuzibora'

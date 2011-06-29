@@ -3,8 +3,9 @@ import os
 import sys
 
 path= "/".join(os.path.dirname(os.path.realpath(__file__)).split("/")[:-1])
+
 os.environ['HOME'] =path
-sys.path.append(path[0:-1])
+sys.path.append(path)
 if sys.version_info>(2,6):
     from urlparse import parse_qs
 else:
@@ -49,7 +50,7 @@ def application(environ, start_response):
         template=templates.get_template(template) 
         response_headers = [('Content-Type', 'text/html')]
         start_response(status, response_headers)
-        ret=[template.render(content=content)]
+        ret=[template.render(content=content).encode('utf-8')]
     else:
         """
         We want to offer a file for download, content=filename
