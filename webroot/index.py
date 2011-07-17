@@ -22,12 +22,9 @@ from Count import *
 from Scatter import *
 from Compare import *
 import report
-
+import debug
 templates=TemplateLookup(path+'templates');
-def debug(s):
-    f=open("output/output.txt","a")
-    f.write(str(s)+"\n")
-    f.close()
+
 def application(environ, start_response):
     """
     Main application that get's called
@@ -108,6 +105,7 @@ def index(param):
     """
     Displays the index site
     """
+
     content={'variables':list_variables(),'date':first_patient()}
     return ('index.html',content)
 def count(param):
