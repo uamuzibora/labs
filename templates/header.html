@@ -1,3 +1,4 @@
+## -*- coding: utf-8 -*-
 <%namespace name="util" file="functions.html" />
 <%!
 import config
@@ -21,26 +22,53 @@ import debug
 <script type="text/javascript" src="javascript/flotr/lib/canvastext.js"></script>
 <script type="text/javascript" src="javascript/flotr/flotr.js"></script>
 <script type="text/javascript" src="javascript/plotting.js"></script>
-<link rel="stylesheet" href="css/blueprint/screen.css" type="text/css" media="screen, projection">
-<link rel="stylesheet" href="css/blueprint/print.css" type="text/css" media="print">	
-<!--[if lt IE 8]>
-<link rel="stylesheet" href="css/blueprint/ie.css" type="text/css" media="screen, projection">
-<![endif]-->
+<!-- Bootstrap -->
+<link href="css/bootstrap.min.css" rel="stylesheet">
 
+<style type="text/css">
+body {padding-top:50px;}
+</style>
 
 </head>
 <body>
-<div class="container showgriid">
-  <div id="header" class="span-24 last prepend-top pull-3">
-    <a href="${config.webroot[0:-1]}" style="text-decoration:none;">
-      <div class="span-8">
-      <!--<img src="images/ublogo.png" />-->
-      </div>
-      <div class="span-16  last">
-      <h1>Uamuzibora Labs</h1>
-      </div>
-    </a>
-  </div>
-  
-  <div id = "main" class="span-24 last pull-2 prepend-top">
+<script src="js/bootstrap.min.js"></script>
 
+   <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="${config.webroot[0:-1]}">Uamuzibora Labs</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+               <li><a href="${config.webroot}single_query">Clinic Statistics</a></li>
+	      <li><a href="${config.webroot}distribute">Distribution of Numerical Variables</a></li>
+	      <li><a href="${config.webroot}count">Counting Statistics</a></li>
+	      <li><a href="${config.webroot}scatter">Scatter Plots</a></li>
+	      <li><a href="${config.webroot}compare">Compare Numerical Variables</a></li>
+           
+	      
+	      <li><a href="${config.webroot}about.html">About</a></li>
+              <li><a href="${config.webroot}contact.html">Contact</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+   
+
+   <div class="container-fluid">
+
+<!--If Error Message in contents we display here.-->
+%if 'error' in content.keys():
+<div class="alert alert-error">  
+  
+  <strong>Error! </strong> ${content["error"]}  
+</div>  
+%endif
+  
+   

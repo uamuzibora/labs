@@ -1,5 +1,7 @@
 import psycopg2
 import psycopg2.extras
+import MySQLdb
+import MySQLdb.cursors
 
 
 
@@ -14,17 +16,25 @@ class DB:
     query_dict(self,query,variables): Queries the database, variables hold input variables to avoid sql-injection. Returns a dictionary of results
 
     """
-    def __init__(self,host=None,user=None,password=None,database=None):
+    def __init__(self,host=None,user=None,password=None,database=None,driver="pg"):
         """
         Initialising the database connection
         """
-        if password:
-            self.connection=psycopg2.connect(host=host,user=user,password=password,database=database)
-        else:#for ident
+        if driver=="pg":
+            if password:
+                self.connection=psycopg2.connect(host=host,user=user,password=password,database=database)
+            else:#for ident
             
-            self.connection=psycopg2.connect(user=user,database=database)
-        self.cursor=self.connection.cursor()
-
+                self.connection=psycopg2.connect(user=user,database=database)
+            self.cursor=self.connection.cursor()
+        elif driver=="mysql":
+            if password:
+                self.connection=MySQLdb.connect(host=host,user=user,passwd=password,db=database)
+            else:#for ident
+            
+                self.connection=MySQLdb.connect(user=user,database=database)
+            self.cursor=self.connection.cursor()
+        self.driver=driver
     def insert(self,table,dictionary):
         """ Inserts a dictinoary into the table, if the dictinoary is a list of dictinonaries it inserts them all"""
         cursor=self.connection.cursor()
@@ -40,9 +50,10 @@ class DB:
             statement+= "VALUES (%("+ ")s,%(".join(dictionary[0].keys())+")s)"
 
             cursor.executemany(statement,dictionary)
+        insert_id= self.connection.insert_id()
         self.connection.commit()
         cursor.close()
-    
+        return insert_id
     def in_db(self,table,column,entry):
         """
         determines if entry of column in table extists
@@ -80,7 +91,10 @@ class DB:
          Example:
          result= db.query_dict("SELECT * from table where id=%s",(1,)
         """
-        cursor=self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        if self.driver=="pg":
+            cursor=self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        else: 
+            cursor=MySQLdb.cursors.DictCursor(self.connection)
         if variables!=None:
             if type(variables)!=tuple:
                 cursor.execute(query,(variables,))

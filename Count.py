@@ -345,7 +345,7 @@ class Count:
 
 if __name__=='__main__':
 
-    c=Count(['sex'])#'age'],calculation=["First"],cutoff=[30])
+    c=Count(['cd4_count'],cutoff=[300],calculation=['First'])
     print c.data
     print c.numbers().keys()
     n,p= c.numbers(),c.xaxis()

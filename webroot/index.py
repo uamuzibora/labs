@@ -21,6 +21,9 @@ from core import *
 from Count import *
 from Scatter import *
 from Compare import *
+from Distribute import *
+from Single_query import *
+
 import report
 import debug
 templates=TemplateLookup(path+'templates');
@@ -38,12 +41,12 @@ def application(environ, start_response):
         content={'variables':list_variables(),'date':first_patient(),'error':error_msg}
         template="index.html"
         
-
     status = '200 OK'
     if template !='file':
         """
         We want to show a normal webpage
         """
+
         template=templates.get_template(template) 
         response_headers = [('Content-Type', 'text/html')]
         start_response(status, response_headers)
@@ -80,25 +83,34 @@ def handle_url(environ):
     request_body = environ['wsgi.input'].read(request_body_size)
     param = parse_qs(request_body);
     function=environ.get('PATH_INFO','/');
+    debug.debug(function)
     if function=='':
         function=environ.get("SCRIPT_NAME","/")
-
     if function=='/count':
         template,content=count(param)
     elif function=='/scatter':
         template,content=scatter(param)
     elif function=='/compare':
         template,content=compare(param)
+    elif function=='/distribute':
+        template,content=distribute(param)
     elif function=='/pdf':
         template,content=pdf(param)
     elif function=='/generate_report':
         template,content=generate_report(param);
     elif function=='/vf':
         template,content=vf(param);
+    elif function=='/single_query':
+        template,content=single_query(param);
     elif function=='/generate_saved_report':
         template,content=generate_saved_report(param);
+    elif function.find(".html")>-1:
+        template=function[0:]
+        content={}
     else:
         template,content=index(param)
+
+    content['variables']=list_variables()
     return template,content
    
 def index(param):
@@ -112,15 +124,28 @@ def count(param):
     """
     Display the counting site
     """
-    start=param.get('start_year',[''])[0]+'-'+param.get('start_month',[''])[0]+'-'+param.get('start_day',[''])[0]
-    end=param.get('end_year',[''])[0]+'-'+param.get('end_month',[''])[0]+'-'+param.get('end_day',[''])[0]
+    content={'date':first_patient()}
+    if "group" in param.keys():
+        start=param.get('start_year',[''])[0]+'-'+param.get('start_month',[''])[0]+'-'+param.get('start_day',[''])[0]
+        end=param.get('end_year',[''])[0]+'-'+param.get('end_month',[''])[0]+'-'+param.get('end_day',[''])[0]
 
-    group=param.get('group',[''])
-    cutoff=param.get('cutoff',[''])
-    calc=param.get('calc',[''])
-    c=Count(group, cutoff=cutoff,calculation=calc,start=start,end=end);
-
-    return ('count.html', c);
+        group=param.get('group',[''])
+        cutoff=param.get('cutoff',[])
+        calc=param.get('calc',[''])
+        cf=0
+        if group:
+            for g in group:
+                v=variable(g)
+                if "numeric" in v['type']:
+                    cf+=1
+            debug.debug(cf)
+            debug.debug(cutoff)
+            if cf==len(cutoff):
+                c=Count(group, cutoff=cutoff,calculation=calc,start=start,end=end);
+                content["data"]=c
+            else:
+                content["error"]="When grouping by a numerical variable, you must provide a cutoff score to do the grouping."
+    return ('count.html', content);
 def vf(param):
     """
     Shows a page with Vestgard-Fransen statistics
@@ -133,23 +158,94 @@ def scatter(param):
     """
     Displaying the scatter plot
     """
-    variables=param.get('variables',[''])
-    calc=param.get('calc',[''])
-    sc=Scatter(variables,calculation=calc)
-    
-    return ('scatter.html',sc);
+    content={}
+    if "variables" in param.keys():
+        variables=param.get('variables',[''])
+        calc=param.get('calc',[''])
+        
+        if len(variables)==2:
+            sc=Scatter(variables,calculation=calc)
+            content["data"]=sc
+        else:
+            content["error"]="You need to specify two variables to display a scatter plot"
+        
+    return ('scatter.html',content);
+
+def single_query(param):
+    """
+    Displaying clinic statistics
+    """
+
+
+    content={}
+    if "single_query" in param.keys():
+        variable=param.get('single_query',[''])[0]
+        
+        sq=Single_query(variable)
+        content['data']=sq
+
+    return ('single_query.html',content);
+
 
 def compare(param):
     """
     Displaying a comparisson of different variables 
     """
-    group=param.get('group',[''])
-    variable=param.get('variables',[''])[0]
-    calc=param.get('calc',[''])
-    calcvariable=param.get('calcvariable',[''])[0]
-    cutoff=param.get('cutoff',[''])
-    c=Compare(variable,group,calcvariable=calcvariable,calculation=calc,cutoff=cutoff)
-    return ('compare.html',c);
+    content={}
+    debug.debug(param)
+    if "variables" in param.keys():
+
+        group=param.get('group')
+        
+        var=param.get('variables',[''])[0]
+        calc=param.get('calc',[''])
+        calcvariable=param.get('calcvariable',[''])[0]
+        cutoff=param.get('cutoff',[])
+        cf=0
+        if group:
+            for g in group:
+                v=variable(g)
+                if "numeric" in v['type']:
+                    cf+=1
+            if cf==len(cutoff):
+                c=Compare(var,group,calcvariable=calcvariable,calculation=calc,cutoff=cutoff)
+
+                content['data']=c
+            else: 
+                content["error"]="When grouping by a numerical variable, you must provide a cutoff score to do the grouping."
+        else:
+            content["error"]="You need to provide a group"
+    return ('compare.html',content);
+
+def distribute(param):
+    """
+    Displaying a comparisson of different variables 
+    """
+    content={}
+    if "variables" in param.keys():
+
+        group=param.get('group')
+        
+        var=param.get('variables',[''])[0]
+        calc=param.get('calc',[''])
+        calcvariable=param.get('calcvariable',[''])[0]
+        cutoff=param.get('cutoff',[])
+        cf=0
+        if group:
+            for g in group:
+                v=variable(g)
+                if "numeric" in v['type']:
+                    cf+=1
+        debug.debug(cf)
+        debug.debug(cutoff)
+        if cf==len(cutoff):
+        
+            d=Distribute(var,group,calcvariable=calcvariable,calculation=calc,cutoff=cutoff)
+            content['data']=d
+        else: 
+            content["error"]="When grouping by a numerical variable, you must provide a cutoff score to do the grouping."
+    return ('distribute.html',content);
+
 
 def pdf(param):
     """
@@ -218,7 +314,9 @@ def generate_saved_report(param):
 if __name__=='__main__':
     from flup.server.fcgi import WSGIServer
     WSGIServer(application,bindAddress = '/tmp/fcgi.sock').run()
-    #cutoff=['30','100']
+    
+    
+#cutoff=['30','100']
     #calc=['Mean']
     #c=Count(['age','cd4_count'],cutoff=cutoff,calculation=calc,start='2001-01-01',end='2007-01-01');
     #template=templates.get_template('count.html') 
@@ -232,4 +330,9 @@ if __name__=='__main__':
     #c=Compare('cd4_count',['sex','age'],cutoff=['40'],calcvariable='Mean')
     #template=templates.get_template('compare.html')
     #print template.render(content=c)
-    
+    #d=Distribute('cd4_count',['sex','age'],cutoff=['40'],calcvariable='Mean')
+    #template=templates.get_template('distribute.html')
+    #n=d.numbers()
+    #keys=n.keys()
+    #print len(n[keys[0]]['values'])
+    #print template.render(content=d)

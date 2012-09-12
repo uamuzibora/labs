@@ -1,8 +1,24 @@
 <%namespace name="util" file="functions.html" />
 <%include file="header.html" />
+<div class="row-fluid">
+  <div class="span3">
 <h2> Scatter </h2>
+${util.scatter_form(content['variables'])}
 
-${util.scatter_plot(content)}
-The correlation between ${content.labels()[0]} and ${content.labels()[1]} is ${content.numbers()[2]}
+  </div>
+  <div class="span9">
+    %if "data" in content.keys():
+    ${util.scatter_plot(content["data"])}
+    The <a href="http://en.wikipedia.org/wiki/Correlation_and_dependence">correlation</a> between ${content["data"].labels()[0]} and ${content["data"].labels()[1]} is ${content["data"].numbers()[2]}
+    <br /><br />
+    The corrolation between two variables says something about how much you know about one if you know the other. It is always between -1 and 1. If the corrolation is 0 there is no relationship between the two variables. If the corrolation is 1 it means that if we know the value of one of the variables we know the value of the other as well. A corrolation of 1 also tells us that a large value of one variable gives a large value of the other variable, while if the correlation is negative a large value of one variable implies a small value of the other.
+    %else:
+    <h3> Choose two variables to dispaly a scatter plot</h3>
+    %endif
+
+  </div>
+</div>
+
+
 <%include file="footer.html" />
 

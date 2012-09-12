@@ -1,8 +1,6 @@
-cd4_count&CD4 Count&CD4 Count&results&numeric_multiple&None
-sex&sex&Sex&patients&text&None
-location_id&location_id&Location&patients&lookup&locations
-patient_source_id&patient_source_id&Patient Source&medical_informations&lookup&patient_sources
-age&date_of_birth&Age&patients&numeric_expression&int((datetime.date.today()-$var).days/365)
-height&Height&Height&results&numeric_multiple&None
-weight&Weight&Weight&results&numeric_multiple&None
-who_stage&hiv_positive_who_stage&WHO Stage&medical_informations&text&None
+height&Height&Height&observation&numeric_multiple&5090
+weight&Weight&Weight&observation&numeric_multiple&5089
+cd4_count&CD4 Count&CD4 Count&observation&numeric_multiple&5497
+sex&gender&Sex&person&text&None
+age&birthdate&Age&person&numeric_expression&int((datetime.date.today()-$var).days/365)
+admissions&Admissions&Admissions&single_query&single_query_date&Select date_enrolled from patient_program order by date_enrolled

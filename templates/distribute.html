@@ -1,0 +1,24 @@
+<%namespace name="util" file="functions.html" />
+<%include file="header.html" />
+
+
+<div class="row-fluid">
+  <div class="span2">
+<h2>Distribution</h2>
+${util.distribute_form(content['variables'])}
+
+  </div>
+  <div class="span10">
+    %if "data" in content.keys():
+    ${util.distribution_plot(content["data"])}
+
+    %else:
+    <h3> Choose a variable to show the distribution grouped by up to two other variables of your choice </h3>
+    %endif
+
+  </div>
+</div>
+
+
+<%include file="footer.html" />
+

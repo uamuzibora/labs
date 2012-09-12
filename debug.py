@@ -11,6 +11,6 @@ def debug(message):
 
     f=open(config.log_file,'a')
    
-    f.write(str(datetime.datetime.now())+" "+message+"\n")
+    f.write(str(datetime.datetime.now())+" "+str(message)+"\n")
     f.close()
 

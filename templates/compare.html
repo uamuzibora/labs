@@ -1,6 +1,31 @@
 <%namespace name="util" file="functions.html" />
 <%include file="header.html" />
-<h2> Comparison </h2>
-${util.comparison_table(content)}
+<div class="row-fluid">
+  <div class="span2">
+<h2>Comparison</h2>
+${util.compare_form(content['variables'])}
+
+  </div>
+  <div class="span10">
+    %if "data" in content.keys():
+    <h3> A comparison of ${content["data"].var}</h3>
+    ${util.comparison_table(content["data"])}
+<p>
+    This table gives the mean value of ${content["data"].var} for all the different groups. The <a href="http://en.wikipedia.org/wiki/P-value"> "P-value"</a> says something about how significantly <br /> the mean from one group differs from the mean of the rest of the patients. <br />
+<br />
+<b>A short description of a p-values:</b><br /><br />
+The p-value describes how likely the it is for the difference in mean values between two groups to be due to random fluctuations.<br />
+As it is a probability the p-value is a number between zero and one. The lower the p-value the less likely it is that the differences<br />
+between the different groups are due to randomnes. It is usual to require the p-value to be less than 0.05 to say that there is a<br />
+statistical significant difference between the groups.
+
+</p>
+    %else:
+    <h3> Choose a variable to compare for groups based on a different variable</h3>
+    %endif
+
+  </div>
+</div>
+
 <%include file="footer.html" />
 

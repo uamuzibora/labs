@@ -4,7 +4,7 @@ The easiest way to install them all is to get hold of easy_install (http://pypi.
 
 Install all of these packages with the install_packages.py script
 mako
-pisa
+pisa	
 reportlab
 html2pdf
 flup

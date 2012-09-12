@@ -1,6 +1,7 @@
 #Importing need modules
 #import os
 import numpy
+from scipy import stats
 from datetime import date
 import datetime
 import sys
@@ -21,8 +22,43 @@ def db_connect():
     Retunrs a connection to the database
     """
     
-    return db.DB(user=login,password=password,database=database,host=host)
+    return db.DB(user=login,password=password,database=database,host=host,driver="mysql")
 
+
+
+def single_query(field):
+    """
+    Query the database for a single query not a query for each patient. Eg How many patient are enrolled.
+    The variable will contain the exact query to the database and we will return the following data
+    {'total':current_total,'monthly':{'Jan 2012':number that month,...},'yearly':{2012:number that year'...}}
+
+    """
+    
+
+    db=db_connect();
+    field=variable(field)
+    if field['table'] !='single_query':
+        return None
+    query=field['query']
+    result=db.query_list(query) # Should be a list of dates
+    total=len(result)# Current total
+    # Go through dates and create montly and yearly stats
+    monthly={}
+    yearly={}
+    for r in result:
+        r=r[0]
+        month=r.replace(day=1,hour=0,minute=0,second=0)
+        year=r.replace(month=1,day=1,hour=0,minute=0,second=0)
+        
+        if month in monthly.keys():
+            monthly[month]+=1
+        else:
+            monthly[month]=1
+        if year in yearly.keys():
+            yearly[year]+=1
+        else:
+            yearly[year]=1
+    return {'total':total,'monthly':monthly,'yearly':yearly}
 
 def query(fields):
     
@@ -39,54 +75,100 @@ def query(fields):
     l=6000
     db=db_connect();
     
-    pat_fields={};
-    med_info_fields={};
-    result_fields={};
+    #We need to determine which tables we need to query
+    # and encoutners/observations
     
+    patient_fields={};
+    person_fields={}
+    person_attribute_fields={}
+    observation_fields={};
+    
+   
+
     data={};
     #Sort out the strings need for the sql queries based on tables
     variables={}
     for f in fields:
         variables[f]=variable(f)
-        if variables[f]['table']== 'patients':
-            pat_fields[f]=variables[f]['field'];
-        elif variables[f]['table'] =='medical_informations':
-            med_info_fields[f]=variables[f]['field'];
-        elif variables[f]['table']  =='results':
-            result_fields[f]=variables[f]['field'];
-            
+        if variables[f]['table']== 'patient':
+            patient_fields[f]=variables[f]['field'];
+        elif variables[f]['table'] =='person':
+            person_fields[f]=variables[f]['field'];
+        elif variables[f]['table']  =='person_attribute':
+            person_attribute_fields[f]=variables[f]['field'];
+        elif variables[f]['table']  =='observation':
+            observation_fields[f]=variables[f]['field'];
     # Find all the information from Patients
    
-    res= db.query_dict('Select '+','.join(['pid','location_id']+pat_fields.values())+ ' from patients order by pid')
+    res=db.query_dict('Select '+','.join(['patient_id']+patient_fields.values())+ ' from patient order by patient_id')
+#    print res
+    patients=[i['patient_id'] for i in res];
    
-    patients=[i['pid'] for i in res];
     for r in res:
-        data[r['pid']]={'location':r['location_id']};
-        for f in pat_fields.keys():
-            if variables[f]['type']=='numeric_expression' and r[pat_fields[f]]:
+        data[r['patient_id']]={};
+   
+        for f in patient_fields.keys():
+            if variables[f]['type']=='numeric_expression' and r[patient_fields[f]]:
                 expression=variables[f]['expression'];
-                final_expression=expression.replace('$var',"r[pat_fields[f]]")
-                if r[pat_fields[f]] !=None:
-                    r[pat_fields[f]]=eval(final_expression)
-            data[r['pid']][f]=r[pat_fields[f]];
+                final_expression=expression.replace('$var',"r[patient_fields[f]]")
+                if r[patient_fields[f]] !=None:
+                    r[patient_fields[f]]=eval(final_expression)
+            data[r['patient_id']][f]=r[patient_fields[f]];
    
 
-    # Find information from medical_informations
-    res=db.query_dict("Select "+' , '.join(['pid','hiv_positive_clinic_start_date']+med_info_fields.values())+" from medical_informations order by pid")
-    for r in res:
-        data[r['pid']]['date']=r['hiv_positive_clinic_start_date'];
-        for f in med_info_fields.keys():
-            data[r['pid']][f]=r[med_info_fields[f]];
-    # Find informations from results
-    for f in result_fields:
+    # Need start date for each patient. 
 
-        id=db.query_dict("Select id from tests where name=%s",result_fields[f])[0]['id']
+    res=db.query_dict("Select "+'patient_id,date_enrolled '+" from patient_program where program_id=1")
+    for r in res:
+        data[r['patient_id']]['date']=r['date_enrolled'];
+
+    # Find information from person
+    res=db.query_dict("Select "+' , '.join(['person_id']+person_fields.values())+" from person order by person_id")
+    for r in res:
+        #data[r['pid']]['date']=r['hiv_positive_clinic_start_date'];
+        if r['person_id'] in data.keys():
+            for f in person_fields.keys():
+                if variables[f]['type']=='numeric_expression' and r[person_fields[f]]:
+                    expression=variables[f]['expression'];
+                    final_expression=expression.replace('$var',"r[person_fields[f]]")
+                    if r[person_fields[f]] !=None:
+                        r[person_fields[f]]=eval(final_expression)
+                data[r['person_id']][f]=r[person_fields[f]];
+
+
+            
+    # Find informations from results
+    for f in observation_fields:
+
+        #id=db.query_dict("Select id from tests where name=%s",result_fields[f])[0]['id']
         if variables[f]['type']=='numeric_multiple':
-            res=db.query_dict("SELECT p.pid,avg(r.value_decimal),first(r.value_decimal),last(r.value_decimal),regr_slope(r.value_decimal,extract(epoch from res.test_performed)) from patients p LEFT JOIN results res on res.pid=p.pid LEFT JOIN (SELECT value_decimal, result_id from result_values LEFT JOIN results on results.id=result_values.result_id order by test_performed) r on r.result_id=res.id where res.test_id= %s group by p.pid",id)
+            res=db.query_dict("SELECT obs.person_id,obs.value_numeric,enc.encounter_datetime from obs LEFT JOIN encounter as enc on enc.encounter_id=obs.encounter_id where obs.concept_id = %s ",variables[f]['concept'])
+
+            temp={}
+
             for r in res:
-                data[r["pid"]][f]={'Mean':r['avg'],'First':r['first'], 'Last':r['last'],'Regression':r['regr_slope']};
-                if data[r["pid"]][f]['Regression'] !=None:
-                   data[r["pid"]][f]['Regression']*= (3600*24*30.41)
+#                print r
+                if r['person_id'] in temp.keys():
+                    temp[r['person_id']][r['encounter_datetime']]=r['value_numeric']
+                else:
+                    temp[r['person_id']]={r['encounter_datetime']:r['value_numeric']}
+            for key in temp.keys():
+                avg=numpy.average(temp[key].values())
+                sorted_keys=sorted(temp[key].keys())
+                t=[]
+                y=[]
+                for i in sorted_keys:
+                    d=i-sorted_keys[0]
+                    t.append(d.total_seconds()/(2548800)) # Seconds per month
+                    y.append(temp[key][i])
+                slope, intercept, r_value, p_value, std_err = stats.linregress(t,y)
+                if slope!=slope:
+                    slope=None
+                data[key][f]={'Mean':avg,'First':temp[key][sorted_keys[0]], 'Last':temp[key][sorted_keys[-1]],'Regression':slope}; # SORT OUT REGRESSION
+                #if data[r["pid"]][f]['Regression'] !=None:
+                #   data[r["pid"]][f]['Regression']*= (3600*24*30.41)
+
+
         elif variables[f]['type']=='numeric_occurrence':
 
             res=db.query_dict("SELECT pid,count(id),min(test_performed),max(test_performed) FROM results WHERE test_id= %s GROUP BY pid",id)
@@ -128,7 +210,7 @@ def query(fields):
                 lookups[v][r['id']]=r['name']
     for d in data:
         
-        for f in result_fields:
+        for f in observation_fields:
             if f not in data[d].keys():
                 if variables[f]['type']=='numeric_multiple':
                     data[d][f]={'Mean':None,'First':None, 'Last':None,'Regression':None};
@@ -154,7 +236,7 @@ def first_patient():
     Returns the hiv_positive_clinic_start_date for the first patient
     """
     db=db_connect()
-    return db.query_list('SELECT min(hiv_positive_clinic_start_date) from medical_informations')[0][0]
+    return db.query_list('SELECT min(date_enrolled) from patient_program where program_id=1')[0][0]
 
 def distinct_values(name):
     """
@@ -162,9 +244,10 @@ def distinct_values(name):
     """
     v=variable(name)
     db=db_connect();
-    distinct=int(db.query_dict('SELECT count(Distinct '+v['field']+') FROM '+v['table'])[0]['count'])
-    m=int(db.query_dict('SELECT count('+v['field']+') FROM '+v['table'])[0]['count'])
-    tot=int(db.query_dict('SELECT count(*) FROM '+v['table'])[0]['count'])
+    distinct= int(db.query_dict('SELECT count(Distinct '+v['field']+') as count FROM '+v['table'])[0]['count'])
+
+    m=int(db.query_dict('SELECT count('+v['field']+') as count FROM '+v['table'])[0]['count'])
+    tot=int(db.query_dict('SELECT count(*) as count FROM '+v['table'])[0]['count'])
     if tot>m:# We had Nulls. Want to include this in the count
         distinct+=1
     
@@ -177,8 +260,8 @@ def has_none(name):
     db=db_connect();
     v=variable(name)
     ret=0
-    m=int(db.query_dict('SELECT count('+v['field']+') FROM '+v['table'])[0]['count'])
-    tot=int(db.query_dict('SELECT count(*) FROM '+v['table'])[0]['count'])
+    m=int(db.query_dict('SELECT count('+v['field']+') as count FROM '+v['table'])[0]['count'])
+    tot=int(db.query_dict('SELECT count(*) as count FROM '+v['table'])[0]['count'])
     if tot>m:# We had Nulls. Want to include this in the count
         ret=1
     
@@ -205,6 +288,10 @@ def variable(name):
                 ret['lookup_table']=line_array[5];
             if ret['type']=='numeric_expression':
                 ret['expression']=line_array[5];
+            if ret['table']=='single_query':
+                ret['query']=line_array[5]
+            if ret['table']=='observation':
+                ret['concept']=line_array[5]
     f.close();
     return ret
 def list_variables():
@@ -221,7 +308,10 @@ def list_variables():
 
 if __name__=='__main__':
     print list_variables()
-    print query(['cd4'])
+#    print query(['cd4_count'])
+    print single_query('admissions')
+
+#    print distinct_values('sex')
 
 
 

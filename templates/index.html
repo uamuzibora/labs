@@ -3,19 +3,34 @@
 <%!
 	import config
 %>
-Some diffrent ways to look at the data <br />
-%if "error" in content.keys():
-    <h2> ERROR </h2>
-    <p>${content["error"]}</p>
-%endif
-<h2> Counting Statistics</h2>
-${util.count_form(content['date'],content['variables'])}
 
-<h2> Scatter Plot </h2>
-${util.scatter_form()}
-<h2> Compare numerical values </h2>
-${util.compare_form(content['variables'])}
+<div class="row-fluid">
+  <div class="span12">
+    <div class="hero-unit">
+      <h1>Welcome to UamuziBora Labs</h1>
+      <p>Uamuzibora Labs is web based application to generate statistics about HIV patients in the Uamuzibora EMR system</p>
+      <p>
+	<a href="${config.webroot}about.html" class="btn btn-primary btn-large">
+	  Learn more
+	</a>
+      </p>
+      <h2> UamuziBora Labs provides the following types of statistics:</h2>
+      <a href="${config.webroot}single_query"><h3> Clinic Statistics</h3></a>
+      Statistics about the patient population. Ie. how many patients admitted per month
+      <a href="${config.webroot}distribute"><h3>Distribution of Numerical Variables</h3></a>
+      Shows the distribution of variables about patients. Ie the age distribution of patients. 
+      <a href="${config.webroot}count"><h3>Counting Statistics</h3></a>
+      Counts the number of patients in different groups and sub groups. Ie how many patients of different genders.
+      <a href="${config.webroot}scatter"><h3>Scatter Plots</h3></a>
+      Scatter plots of variables about patients. Ie scatter plot of the height and weight of patients.
+      <a href="${config.webroot}compare"><h3>Compare Numerical Variables</h3></a>
+      Compare Numerical variables for different groups of patients. Ie compare the mean age of females and males. 
 
-<a href="${config.webroot}pdf"><h2> Generate a pdf report</h2></a>
+
+
+    </div>
+
+
+
 
 <%include file="footer.html"/>

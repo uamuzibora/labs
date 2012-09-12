@@ -1,0 +1,17 @@
+1 Server set-up: 
+
+  1.1 Install and configure lighttp
+  1.2 Install and configure postgresql
+  1.3 Install all python packages
+      mako
+      pisa
+      reportlab
+      html2pdf
+      flup
+      psycopg2   
+      scipy
+      numpy
+      matplotlib
+2. Checkout latest code from github
+3. configure database connection
+4. Run labs
