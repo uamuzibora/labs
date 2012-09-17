@@ -214,7 +214,11 @@ def compare(param):
             else: 
                 content["error"]="When grouping by a numerical variable, you must provide a cutoff score to do the grouping."
         else:
-            content["error"]="You need to provide a group"
+            group=[]
+            c=Compare(var,group,calcvariable=calcvariable,calculation=calc,cutoff=cutoff)
+
+            content['data']=c
+            #content["error"]="You need to provide a group"
     return ('compare.html',content);
 
 def distribute(param):

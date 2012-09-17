@@ -23,7 +23,7 @@ class Count:
 	
         for g in groups:
             self.variables[g]=variable(g);
-            if self.variables[g]['type']=='numeric_expression':
+            if self.variables[g]['type'] in ['numeric_expression','numeric_date_difference']:
                 self.variables[g]['cutoff']=int(cutoff[i])
                 i+=1
             if self.variables[g]['type']=='numeric_multiple':
@@ -58,10 +58,9 @@ class Count:
         # Then we make the variable with the highest number the xaxis
 
         for g in self.variables:
-            if self.variables[g]['type']=='numeric_multiple':
+            if self.variables[g]['type'] in ['numeric_multiple','boolean','numeric_date_difference',"boolean_sql"]:
                 number[g]=2
             elif 'cutoff' in self.variables[g].keys():
-                
                 number[g]=2+has_none(g)
             
             else:
@@ -71,10 +70,14 @@ class Count:
         #Go thourgh all the values to put them in the right subgroups
         n=0
         for d in self.data.values():
-            if d['date']!=None:
-                date=calendar.timegm(d['date'].timetuple())
-            else:
+            if 'date' not in d.keys():
                 date=self.start-1
+                d['date']=None
+            else:
+                if d['date']!=None:
+                    date=calendar.timegm(d['date'].timetuple())
+                else:
+                    date=self.start-1
             if date>=self.start and date<=self.end:
                 
                 if 'cutoff' in self.variables[xaxis].keys():
@@ -148,9 +151,11 @@ class Count:
 
         if len(self.variables)==2:
             probs={}
-
-            nu=len(self.stat[self.stat.keys()[0]])
-            
+            nu=0
+            for i in self.stat.keys():
+                l=len(self.stat[i])
+                if l>nu:
+                    nu=l
             rows=numpy.zeros(nu)
             cols=numpy.zeros(nu)
             
@@ -164,13 +169,10 @@ class Count:
                 for y in self.stat:
                     i=0
                     if x!=y:
-                        
                         for k in self.stat[y].values():
-                           
                             others[i]+=k
                             i+=1
-                        
-                    
+
                 i=0    
                 for val in self.stat[x].values():
                     this[i]=val
@@ -345,7 +347,7 @@ class Count:
 
 if __name__=='__main__':
 
-    c=Count(['cd4_count'],cutoff=[300],calculation=['First'])
+    c=Count(['status'])#sex','age'],cutoff=[30],calculation=['First'])
     print c.data
     print c.numbers().keys()
     n,p= c.numbers(),c.xaxis()

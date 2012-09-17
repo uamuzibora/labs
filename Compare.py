@@ -24,7 +24,6 @@ select p.pid, first(k.value_decimal),last(k.value_decimal),avg(k.value_decimal) 
         self.groups=groups
         for g in groups:
             v=variable(g);
-                
             if v['type']=='numeric_multiple':
                 v['calculation']=calculation[c]
                 v['cutoff']=int(cutoff[i])
@@ -45,6 +44,7 @@ select p.pid, first(k.value_decimal),last(k.value_decimal),avg(k.value_decimal) 
         if calcvariable !='':
             self.variables[self.var_post]['calculation']=calcvariable
         self.var=var
+        self.var_pretty=self.variables[var]['pretty_name']
         self.stat={}
 
     def _res(self):
@@ -98,8 +98,8 @@ select p.pid, first(k.value_decimal),last(k.value_decimal),avg(k.value_decimal) 
         tot_mean=numpy.mean(tot)
         tot_std=numpy.std(tot)
         tot_new=[]
-        l=tot_mean-4*tot_std
-        u=tot_mean+4*tot_std
+        l=tot_mean-5*tot_std
+        u=tot_mean+5*tot_std
         # We choose to not include values that are more than 4 STD from the mean.
         # Mainly to not include wrongly inputed variables
         for t in tot:
@@ -113,15 +113,21 @@ select p.pid, first(k.value_decimal),last(k.value_decimal),avg(k.value_decimal) 
                     tmp.append(n)
             temp_stat[sg]=tmp
         #Calculate mean, std for each sub group
+
         for subgroup in temp_stat.keys():
-            mean=numpy.mean(temp_stat[subgroup])
-            total=[]
-            for sg in temp_stat.keys():
-                if sg!=subgroup:
-                    total+=temp_stat[sg]
-            # Perform t-test to see if a if difference is significant
-            p_value=stats.ttest_ind(temp_stat[subgroup],total)[1]
-            self.stat[subgroup]={'mean':mean,'p_value':p_value,'N':len(temp_stat[subgroup])}
+            if subgroup !='':
+                mean=numpy.mean(temp_stat[subgroup])
+                total=[]
+                for sg in temp_stat.keys():
+                    if sg!=subgroup:
+                        total+=temp_stat[sg]
+                # Perform t-test to see if a if difference is significant
+                if len(temp_stat[subgroup])>0:
+                    p_value=stats.ttest_ind(temp_stat[subgroup],total)[1]
+                else:
+                    p_value=1
+                    mean=0
+                self.stat[subgroup]={'mean':mean,'p_value':p_value,'N':len(temp_stat[subgroup])}
         self.stat['Total']={'mean':numpy.mean(tot),'p_value':1,'N':len(tot)}
         #Numbers in each group
     def numbers(self):
@@ -148,3 +154,8 @@ select p.pid, first(k.value_decimal),last(k.value_decimal),avg(k.value_decimal) 
 
         return (sorted(self.stat.keys()))
 
+
+if __name__=="__main__":
+    d=Compare('age',[])
+    d._res()
+    print d.stat

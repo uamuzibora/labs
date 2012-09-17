@@ -39,26 +39,84 @@ def single_query(field):
     field=variable(field)
     if field['table'] !='single_query':
         return None
-    query=field['query']
-    result=db.query_list(query) # Should be a list of dates
-    total=len(result)# Current total
+    if field['type']=="single_query_date":
+        query=field['query']
+        result=db.query_list(query) # Should be a list of dates
+        total=len(result)# Current total
     # Go through dates and create montly and yearly stats
-    monthly={}
-    yearly={}
-    for r in result:
-        r=r[0]
-        month=r.replace(day=1,hour=0,minute=0,second=0)
-        year=r.replace(month=1,day=1,hour=0,minute=0,second=0)
+        monthly={}
+        yearly={}
+        for r in result:
+            r=r[0]
+
+            month=r.replace(day=1,hour=0,minute=0,second=0)
+            year=r.replace(month=1,day=1,hour=0,minute=0,second=0)
         
-        if month in monthly.keys():
-            monthly[month]+=1
-        else:
-            monthly[month]=1
-        if year in yearly.keys():
-            yearly[year]+=1
-        else:
-            yearly[year]=1
-    return {'total':total,'monthly':monthly,'yearly':yearly}
+            if month in monthly.keys():
+                monthly[month]+=1
+            else:
+                monthly[month]=1
+            if year in yearly.keys():
+                yearly[year]+=1
+            else:
+                yearly[year]=1
+        return {'total':total,'monthly':monthly,'yearly':yearly}
+    elif field['type']=="single_query_date_difference":
+        res=db.query_dict("Select patient_id as id,date_enrolled as date from patient_program where program_id=1")
+        admission={}
+        for r in res:
+            admission[r['id']]=r['date']
+
+        query1={}
+        query2={}
+        data={}
+
+        res=db.query_dict(field['query1'])
+
+        for r in res:
+            query1[r['id']]=r['date']
+        res=db.query_dict(field['query2'])
+        for r in res:
+            query2[r['id']]=r['date']
+        monthly={}
+        monthly_N={}
+        yearly={}
+        yearly_N={}
+        tot=[]
+        i=0
+        for p in query1.keys():
+            if p in query2.keys():
+                date=admission[p]
+                month=date.replace(day=1,hour=0,minute=0,second=0)
+                year=date.replace(month=1,day=1,hour=0,minute=0,second=0)
+        
+                ans=(query2[p]-query1[p]).days
+                if ans > 0 and 5*365:
+                    i+=1
+                    tot.append(ans)
+                    
+                    if month in monthly.keys():
+                        monthly[month].append(ans)
+                        monthly_N[month]+=1
+                    else:
+                        monthly[month]=[ans]
+                        monthly_N[month]=1
+                    if year in yearly.keys():
+                        yearly[year].append(ans)
+                        yearly_N[year]+=1
+                    else:
+                        yearly[year]=[ans]
+                        yearly_N[year]=1
+                    
+        
+        for month in monthly.keys():
+            monthly[month]=numpy.average(monthly[month])
+        for year in yearly.keys():
+            yearly[year]=numpy.average(yearly[year])
+        total=numpy.average(tot)
+#print len(tot),len(query1),len(query2),len(admission)
+        return {'total':total,'monthly':monthly,'yearly':yearly,'yearly_N':yearly_N,'monthly_N':monthly_N}
+
 
 def query(fields):
     
@@ -169,45 +227,103 @@ def query(fields):
                 #   data[r["pid"]][f]['Regression']*= (3600*24*30.41)
 
 
-        elif variables[f]['type']=='numeric_occurrence':
-
-            res=db.query_dict("SELECT pid,count(id),min(test_performed),max(test_performed) FROM results WHERE test_id= %s GROUP BY pid",id)
-            
+        elif variables[f]['type']=='boolean':
+            require_answer='concept_answer' in variables[f].keys()
+            if require_answer:
+                res=db.query_dict("SELECT obs.person_id from obs where obs.concept_id = %s and voided=0 and value_coded=%s",(variables[f]['concept'],variables[f]['concept_answer']))
+            else:
+                res=db.query_dict("SELECT obs.person_id from obs where obs.concept_id = %s and voided=0",variables[f]['concept'])
+            patients_with_observation=[]
             for r in res:
-
-                #find numer of days between min and max
-                data[r["pid"]][f]={'Count':int(r['count']),'Interval':None}
-                if r['count'] !=0:
-                    days=(r['max']-r["min"]).days
-                    if days!=0:
-                        data[r['pid']]['Interval']=days/float(r['count'])
-               
-
-                    
-                    
-        else:
-
-            for p in patients:
-                values=db.query_dict("Select result_values.id,result_id,value_decimal,value_text,value_lookup,results.test_performed from result_values LEFT JOIN results on result_values.result_id=results.id where results.pid=%s and results.test_id=%s",(p,id))                      		
+                patients_with_observation.append(r['person_id'])
+            for key in data.keys():
+                if key in patients_with_observation:
+                    data[key][f]=variables[f]['yes']
+                else:
+                    data[key][f]=variables[f]['no']
+        elif variables[f]['type']=='text_multiple':
+            if 'no_encounter' in variables[f].keys():
+                res=db.query_dict("SELECT obs.person_id,obs.value_coded from obs where obs.concept_id = %s and obs.voided=0",variables[f]['concept'])
+                temp={}
+                lookup={}
+                for r in res:
                 
-                for v in values:
-                    if v['value_decimal']!=None:
-                        val=v['value_decimal'];
-                    elif v['value_text']!=None:
-                        val=v['value_text'];
-                    elif v['value_lookup']!=None:
-                        val=v['value_lookup'];
-                    data[p][f]={'date':v['test_performed'],'values':val};
-    
+                    concept=r['value_coded']
+                    if concept in lookup.keys():
+                        text=lookup[concept]
+                    else:
+                        lo=db.query_dict("SELECT name from concept_name where concept_id=%s",concept)
+                        text=lo[0]['name']
+                        lookup[concept]=text
+                    data[r['person_id']][f]=text
+            else:
 
-    #Put in the lookup values
-    lookups={}
-    for v in variables:
-        if variables[v]['type']=='lookup':
-            lookups[v]={}
-            res=db.query_dict("SELECT id, name FROM %s" % variables[v]['lookup_table'])
-            for r in res:
-                lookups[v][r['id']]=r['name']
+                res=db.query_dict("SELECT obs.person_id,obs.value_coded,enc.encounter_datetime from obs JOIN encounter as enc on enc.encounter_id=obs.encounter_id where obs.concept_id = %s and obs.voided=0 order by enc.encounter_datetime",variables[f]['concept'])
+
+                temp={}
+                lookup={}
+                for r in res:
+                    if r['person_id'] in temp.keys():
+                        temp[r['person_id']][r['encounter_datetime']]=r['value_coded']
+                    else:
+                        temp[r['person_id']]={r['encounter_datetime']:r['value_coded']}
+                for key in temp.keys():
+                    dates=sorted(temp[key].keys())
+                    if variables[f]['which']=="last":
+                        date=dates[-1]
+                    elif variables[f]['which']=="first":
+                        date=dates[0]
+                    concept=temp[key][date]
+                    if concept in lookup.keys():
+                        text=lookup[concept]
+                    else:
+                        lo=db.query_dict("SELECT name from concept_name where concept_id=%s",concept)
+                        text=lo[0]['name']
+                        lookup[concept]=text
+                    data[key][f]=text
+
+    #Deal with date difference
+    for f in fields:
+        if variables[f]['type']=="numeric_date_difference":
+            query1={}
+            query2={}
+            if variables[f]['query1'] !=':admission:':
+                res=db.query_dict(variables[f]['query1'])
+                for r in res:
+                    query1[r['id']]=r['date']
+            else:
+                for p in data.keys():
+                    if 'date' in data[p].keys():
+                        query1[p]=data[p]['date']
+            if variables[f]['query2'] !=':admission:':
+                res=db.query_dict(variables[f]['query2'])
+                for r in res:
+                    query2[r['id']]=r['date']
+            else:
+                for p in data.keys():
+                    if 'date' in data[p].keys():
+                        query2[p]=data[p]['date']
+            for p in data.keys():
+
+                if p in query1.keys() and p in query2.keys():
+                    ans=(query2[p]-query1[p]).days
+                    if ans > 0 and ans < 5*365:
+                        data[p][f]=ans
+                    else:
+                        data[p][f]=None
+
+                else:
+                    data[p][f]=None
+        elif variables[f]['type']=="boolean_sql":
+             res=db.query_dict(variables[f]['sql'])
+             patients_in_query=[]
+             for r in res:
+                 patients_in_query.append(r['patient_id'])
+             for p in data.keys():
+                 if p in patients_in_query:
+                     data[p][f]=variables[f]['yes']
+                 else:
+                     data[p][f]=variables[f]['no']
     for d in data:
         
         for f in observation_fields:
@@ -215,19 +331,11 @@ def query(fields):
                 if variables[f]['type']=='numeric_multiple':
                     data[d][f]={'Mean':None,'First':None, 'Last':None,'Regression':None};
                 if variables[f]['type']=='numeric_occurrence':
-                    
                     data[d][f]={'Count':0,'Interval':None}
-        for val in data[d].keys():
-            if val in lookups.keys():
-                numb=data[d][val];
-                if numb:
-                    name=lookups[val][numb];
-                else:
-                    name='None'
-                data[d][val]=name
-                data[d][val+'_numeric']=numb
-
-    
+                if variables[f]['type']=='text_multiple':
+                    data[d][f]=variables[f]['none']
+                if variables[f]['type']=='boolean':
+                    data[d][f]=variables[f]['no']
 
 
     return data
@@ -244,12 +352,16 @@ def distinct_values(name):
     """
     v=variable(name)
     db=db_connect();
-    distinct= int(db.query_dict('SELECT count(Distinct '+v['field']+') as count FROM '+v['table'])[0]['count'])
+    if v['type']=="text_multiple":
+        distinct=int(db.query_dict('SELECT count(Distinct value_coded) as count from obs where concept_id='+v['concept'])[0]['count'])+1
+        
+    else:
+        distinct= int(db.query_dict('SELECT count(Distinct '+v['field']+') as count FROM '+v['table'])[0]['count'])
 
-    m=int(db.query_dict('SELECT count('+v['field']+') as count FROM '+v['table'])[0]['count'])
-    tot=int(db.query_dict('SELECT count(*) as count FROM '+v['table'])[0]['count'])
-    if tot>m:# We had Nulls. Want to include this in the count
-        distinct+=1
+        m=int(db.query_dict('SELECT count('+v['field']+') as count FROM '+v['table'])[0]['count'])
+        tot=int(db.query_dict('SELECT count(*) as count FROM '+v['table'])[0]['count'])
+        if tot>m:# We had Nulls. Want to include this in the count
+            distinct+=1
     
     return distinct
 
@@ -288,10 +400,31 @@ def variable(name):
                 ret['lookup_table']=line_array[5];
             if ret['type']=='numeric_expression':
                 ret['expression']=line_array[5];
-            if ret['table']=='single_query':
+            if ret['type']=='single_query_date':
                 ret['query']=line_array[5]
             if ret['table']=='observation':
                 ret['concept']=line_array[5]
+            if ret['type']=='text_multiple':
+                ret['which']=line_array[6]
+                ret['none']=line_array[7]
+                if len(line_array)>8:
+                    ret['no_encounter']=True
+            if ret['type']=='boolean':
+                ret['yes']=line_array[6]
+                ret['no']=line_array[7]
+                if len(line_array)>8:
+                    ret['concept_answer']=line_array[8]
+            if ret['type']=="numeric_date_difference":
+                ret['query1']=line_array[5]
+                ret['query2']=line_array[6]
+            if ret['type']=="single_query_date_difference":
+                ret['query1']=line_array[5]
+                ret['query2']=line_array[6] 
+            if ret['type']=='boolean_sql':
+                ret['sql']=line_array[5]
+                ret['yes']=line_array[6]
+                ret['no']=line_array[7]
+
     f.close();
     return ret
 def list_variables():
@@ -309,7 +442,7 @@ def list_variables():
 if __name__=='__main__':
     print list_variables()
 #    print query(['cd4_count'])
-    print single_query('admissions')
+#    print single_query('admissions')
 
 #    print distinct_values('sex')
 

@@ -83,7 +83,7 @@ class Distribute:
                     subgroup+=str(d[g])+', '
             subgroup=subgroup[:-2]
             #extracting values
-            
+
             if  type(self.variables[self.var_post])==dict and type(d[self.var])==dict and type(d)==dict and type(self.variables)==dict and 'calculation' in self.variables[self.var_post].keys():
                 value=d[self.var][self.variables[self.var_post]['calculation']]
             else:
@@ -121,6 +121,11 @@ class Distribute:
 
 
 if __name__=="__main__":
-    d=Distribute('age',[''])
+    d=Distribute('positive_to_enrollment',[])
     d._res()
+ 
+    print d.stat
+    d=Distribute('age',[])
+    d._res()
+ 
     print d.stat

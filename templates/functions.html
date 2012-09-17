@@ -1,6 +1,7 @@
 <!-- Contains all functions to display input forms, plots and tables -->
 <%!
 	import config
+        import math
 %>
 
 <%def name="count_table(data)">
@@ -29,7 +30,7 @@
 		<td>${data[k][i]}</td>
 		%endfor
 		%if p!=False:
-		<td>${p[xaxis[i]]}</td>
+		<td>${round(p[xaxis[i]],4)}</td>
 		%endif
 		</tr>
 		<%
@@ -47,15 +48,17 @@
 	<%
 	i=0
 	xaxis,numbers=data.yearly()
+	xaxis_2,cumulative=data.yearly_cumulative()
 	%>
 	
-	<th>${data.field['pretty_name']}</th>
+	<th>${data.field['pretty_name']}</th><th>Cumulative</th>
 	
 	</tr>
 	%while i<len(xaxis):
 		<tr><td>${xaxis[i].year}</td>
 
-		<td>${numbers[i]}</td>
+		<td>${round(numbers[i],1)}</td>
+		<td>${round(cumulative[i],1)}</td>
 
 		</tr>
 		<%
@@ -70,7 +73,7 @@
 <%
    single_query_variables=[]
    for v in variables:
-       if v[2]=="single_query_date":
+       if v[2] in ["single_query_date","single_query_date_difference"]:
            single_query_variables.append((v[0],v[1]))
 %>
 
@@ -96,13 +99,13 @@
    numeric_mult=[]
    variables_include=[] # Variables we want to include in this type of statistics
    for v in variables:
-       if v[2]=="numeric" or v[2]=="numeric_expression" :
+       if v[2] in ["numeric","numeric_expression","numeric_date_difference"]:
            numeric.append(v[0])
            variables_include.append((v[0],v[1]))
        elif v[2]=="numeric_multiple":
            numeric_mult.append(v[0])
            variables_include.append((v[0],v[1]))
-       elif v[2]=="text":
+       elif v[2] in ["boolean","boolean_sql","text","text_multiple"]:
            variables_include.append((v[0],v[1]))
 %>
 <script type="text/javascript">
@@ -273,13 +276,13 @@ function ShowCalc(calc)
    numeric_mult=[]
    group_by_variables=[]
    for v in variables:
-       if v[2]=="numeric" or v[2]=="numeric_expression" :
+       if v[2] in ["numeric","numeric_expression","numeric_date_difference"]:
            numeric.append(v[0])
            group_by_variables.append((v[0],v[1])) 
        elif v[2]=="numeric_multiple":
            numeric_mult.append(v[0])
            group_by_variables.append((v[0],v[1])) 
-       elif v[2]=="text":
+       elif v[2] in ["boolean","boolean_sql","text","text_multiple"]:
            group_by_variables.append((v[0],v[1]))  
 
 %>
@@ -398,13 +401,13 @@ function Variable()
    numeric_mult=[]
    group_by_variables=[]
    for v in variables:
-       if v[2]=="numeric" or v[2]=="numeric_expression" :
+       if v[2] in ["numeric","numeric_expression","numeric_date_difference"] :
            numeric.append(v[0])
            group_by_variables.append((v[0],v[1])) 
        elif v[2]=="numeric_multiple":
            numeric_mult.append(v[0])
            group_by_variables.append((v[0],v[1])) 
-       elif v[2]=="text":
+       elif v[2] in ["boolean_sql","boolean","text","text_multiple"]:
            group_by_variables.append((v[0],v[1]))  
 
 %>
