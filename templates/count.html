@@ -8,14 +8,15 @@ ${util.count_form(content['date'],content['variables'])}
   </div>
   <div class="span9">
     %if "data" in content.keys():
-    ${util.count_table(content["data"])}
     ${util.count_chart(content["data"])}
+    ${util.count_table(content["data"])}
+
     %if content["data"].probability():
         The <a href="http://en.wikipedia.org/wiki/P-value"> P-value </a> shown is the result of a <a href="http://en.wikipedia.org/wiki/Chi-squared_test"> Chi Squared test</a> which tells us the probability that the differences in distributions of the second group depends on the first group. 
     %endif
     
     %else:
-    <h3> Choose groups to count how many patients in these groups admitted between the two dates</h3>
+    <h3> Choose one or more groups to count how many patients in these groups were admitted between the two dates</h3>
     %endif
   </div>
 </div>

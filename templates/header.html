@@ -3,58 +3,81 @@
 <%!
 import config
 import debug
-
 %>
-
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 
 <title>Uamuzibora Labs</title>
-<script type="text/javascript" src="javascript/flotr/lib/prototype.js"></script>
 
-		
-<!--[if IE]>
-	<script type="text/javascript" src="flotr/lib/excanvas.js"></script>
-	>script type="text/javascript" src="flotr/lib/base64.js"></script>
-<![endif]-->
-<script type="text/javascript" src="javascript/flotr/lib/canvas2image.js"></script>
-<script type="text/javascript" src="javascript/flotr/lib/canvastext.js"></script>
-<script type="text/javascript" src="javascript/flotr/flotr.js"></script>
-<script type="text/javascript" src="javascript/plotting.js"></script>
 <!-- Bootstrap -->
-<link href="css/bootstrap.min.css" rel="stylesheet">
-
+<link href="css/bootstrap.css" rel="stylesheet">
+<!--[if lte IE 8]><script language="javascript" type="text/javascript" src="../excanvas.min.js"></script><![endif]-->
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<!--<script language="javascript" type="text/javascript" src="js/jquery.js"></script>-->
+<script language="javascript" type="text/javascript" src="js/jquery.flot.js"></script>
+<script language="javascript" type="text/javascript" src="js/jquery.flot.pie.js"></script>
+<script language="javascript" type="text/javascript" src="js/jquery.flot.time.js"></script>
+<script language="javascript" type="text/javascript" src="js/jquery.flot.axislabels.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/bootstrap-transition.js"></script>
+<script src="js/bootstrap-collapse.js"></script>
+<!--<script src="js/bootstrap-dropdown.js"></script>-->
 <style type="text/css">
-body {padding-top:50px;}
+body {padding-top:100px;
+background: url(images/ub_background.jpg) top center no-repeat;}
+#rotated {
+position: relative;
+top:180px;
+white-space: nowrap;
+width:5em;margin:0;
+   vertical-align:middle;
+   transform:rotate(-90deg);
+  -o-transform:rotate(-90deg);
+  -moz-transform:rotate(-90deg);
+  -webkit-transform:rotate(-90deg);
+  }
+
+}
+
 </style>
 
 </head>
 <body>
-<script src="js/bootstrap.min.js"></script>
 
-   <div class="navbar navbar-inverse navbar-fixed-top">
-      <div class="navbar-inner">
+   <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner2">
         <div class="container-fluid">
           <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </a>
-          <a class="brand" href="${config.webroot[0:-1]}">Uamuzibora Labs</a>
-          <div class="nav-collapse collapse">
-            <ul class="nav">
-               <li><a href="${config.webroot}single_query">Clinic Statistics</a></li>
-	      <li><a href="${config.webroot}distribute">Distribution of Numerical Variables</a></li>
-	      <li><a href="${config.webroot}count">Counting Statistics</a></li>
-	      <li><a href="${config.webroot}scatter">Scatter Plots</a></li>
-	      <li><a href="${config.webroot}compare">Compare Numerical Variables</a></li>
-           
-	      
-	      <li><a href="${config.webroot}about.html">About</a></li>
-              <li><a href="${config.webroot}contact.html">Contact</a></li>
+
+       
+         <div class="nav-collapse">
+           <ul class="nav" >
+	   <a class="brand" href="http://www.uamuzibora.org"><img src="images/ublogo.png" /></a>
+	      <li><a href="${config.webroot}single_query" style="line-height:40px;">Clinic Indicators</a></li>
+               <li><a href="${config.webroot}outcome" style="line-height:40px;">Health Outcomes</a></li>
+	      <li class="dropdown">
+		<a href="#" class="dropdown-toggle" data-toggle="dropdown" style="line-height:40px;">Advanced</a>
+		<ul class="dropdown-menu">
+		  <li><a href="${config.webroot}count">Counting Statistics</a></li>
+		  <li><a href="${config.webroot}distribute">Distribute Numerical Variables</a></li>
+		  <li><a href="${config.webroot}compare">Compare Numerical Variables</a></li>
+		  <li><a href="${config.webroot}scatter">Scatterplots</a></li>
+
+		</ul>
+	      </li>
+		  
+           </ul>
+	    <ul class="nav pull-right">
+	      <li><a href="http://www.uamuzibora.org/a-better-choice/" style="line-height:40px;">about us</a></li>
+	      <li><a href="http://www.uamuzibora.org/what-we-do/" style="line-height:40px;">what we do</a></li>
+	      <li><a href="http://www.uamuzibora.org/contact-us/" style="line-height:40px;">contact us</a></li>
             </ul>
-          </div><!--/.nav-collapse -->
+         </div><!--/.nav-collapse -->
         </div>
       </div>
     </div>

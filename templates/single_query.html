@@ -4,7 +4,7 @@
 
 <div class="row-fluid">
   <div class="span2">
-<h2>Clinic Statistics </h2>
+<h3>Clinic Statistics </h3>
 ${util.single_query_form(content['variables'])}
 
   </div>
@@ -12,11 +12,11 @@ ${util.single_query_form(content['variables'])}
     %if "data" in content.keys():
     <div class="row-fluid">
       <div class="span3">
-	<h3> ${content["data"].field['pretty_name']} <br /> per Year</h3>
+	<h4> ${content["data"].field['pretty_name']} per Year</h4>
 	${util.single_query_table(content["data"])}
       </div>
       <div class="span7">
-	<h3> Timeline for ${content["data"].field['pretty_name']} per month </h3>
+	<h4> Timeline for ${content["data"].field['pretty_name']} per month </h4>
 	${util.single_query_chart(content["data"])}
       </div>
     </div>

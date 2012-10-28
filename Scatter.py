@@ -100,5 +100,5 @@ class Scatter:
             ylabel+=self.variables[self.xy[1]]['calculation']+' '
         ylabel+=self.variables[self.xy[1]]['pretty_name']
 
-        return (xlabel,ylabel)
+        return (ylabel,xlabel)
 

@@ -1,0 +1,7 @@
+Demographics&sex&Sex
+Demographics&age&Age
+Demographics&entry_point&Patient Source
+Clinical&on_art& ART Status
+Clinical&tb&Ever had TB
+Clinical&cd4_count&CD4 Count
+Clinical&who_stage&First WHO Stage

@@ -1,0 +1,6 @@
+Variable types:
+
+	 Numeric:
+		numeric_multiple, numeric_expression, numeric_date_difference
+	Discret answers
+		text,text_boolean,text_multiple,boolean_sql

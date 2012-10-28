@@ -23,7 +23,7 @@ from Scatter import *
 from Compare import *
 from Distribute import *
 from Single_query import *
-
+from Outcome import *
 import report
 import debug
 templates=TemplateLookup(path+'templates');
@@ -34,12 +34,12 @@ def application(environ, start_response):
     """
     #environ['wsgilog.logger'].info('This information is logged.')
     # Exception will be logged and sent to the browser formatted as HTML.
-    try:
-        template,content=handle_url(environ)
-    except:
-        error_msg="There was an error with the input, check that you have inputed the right number of variables and that all needed extra information has been entered. Error msg: "+ str(sys.exc_info()[1])
-        content={'variables':list_variables(),'date':first_patient(),'error':error_msg}
-        template="index.html"
+#    try:
+    template,content=handle_url(environ)
+ #   except:
+  #      error_msg="There was an error with the input, check that you have inputed the right number of variables and that all needed extra information has been entered. Error msg: "+ str(sys.exc_info()[1])
+   #     content={'variables':list_variables(),'date':first_patient(),'error':error_msg}
+    #    template="index.html"
         
     status = '200 OK'
     if template !='file':
@@ -104,6 +104,8 @@ def handle_url(environ):
         template,content=single_query(param);
     elif function=='/generate_saved_report':
         template,content=generate_saved_report(param);
+    elif function=='/outcome':
+        template,content=outcome(param);
     elif function.find(".html")>-1:
         template=function[0:]
         content={}
@@ -185,6 +187,42 @@ def single_query(param):
         content['data']=sq
 
     return ('single_query.html',content);
+def outcome(param):
+   """
+    Display the outcome site
+    """
+   content={}
+   outcome_dep_var=list_outcomes_dependent_variables()
+   dep_var_groupings={}
+   outcomes=[]
+
+   for dp in outcome_dep_var['dependent_variables']:
+       if dp[0] in dep_var_groupings.keys():
+           dep_var_groupings[dp[0]].append(variable(dp[1]))
+       else:
+           dep_var_groupings[dp[0]]=[variable(dp[1])]
+   for o in outcome_dep_var['outcome']:
+       outcomes.append(variable(o[0]))
+   content["outcome"]=outcomes
+   content["dep_var_groupings"]=dep_var_groupings
+   
+
+    #determine if form is filled out
+   if "outcome" in param.keys():
+       if "depvar" in param.keys():
+           outcome=param.get('outcome',[''])
+           outcomecalc=param.get('outcomecalc',[''])
+           dep_var=param.get('depvar',[''])
+           dep_var_calc=param.get('depvarcalc',[''])
+           dep_var_cutoff=param.get('depvarcutoff',[''])
+           o=Outcome(outcome,dep_var,outcome_calculation=outcomecalc,dep_var_calculation=dep_var_calc,dep_var_cutoff=dep_var_cutoff)
+           content["data"]=o
+       else:
+           content["error"]="You must specify a dependent variable"
+
+   return ('outcome.html', content);
+
+
 
 
 def compare(param):

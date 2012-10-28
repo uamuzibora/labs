@@ -2,11 +2,13 @@
 <%!
 	import config
         import math
+        import string
 %>
+
 
 <%def name="count_table(data)">
 <!-- Makes the count table -->
-	<table class="table table-hover table-bordered">
+	<table class="table table-hover table-bordered table-condensed">
 	<tr><th></th>
 	<%
 	i=0
@@ -20,15 +22,27 @@
 	%for k in sorted(data.keys()):
 		<th>${k}</th>
 	%endfor
+	%if len(data.keys())>1:
+		<th>Total</th>
+	%endif
 	%if p!=False:
 		<th> P-Value</th>
 	%endif
 	</tr>
 	%while i<len(xaxis):
-		<tr><td>${xaxis[i]}</td>
+		<tr><td>${string.capwords(xaxis[i])}</td>
+		  <%
+		     s=0
+		     %>
 		%for k in sorted(data.keys()):
 		<td>${data[k][i]}</td>
+		<%
+		   s+=data[k][i]
+		%>
 		%endfor
+		%if len(data.keys())>1:
+	         <td>${s}</td>
+		%endif
 		%if p!=False:
 		<td>${round(p[xaxis[i]],4)}</td>
 		%endif
@@ -43,7 +57,7 @@
 
 <%def name="single_query_table(data)">
 <!-- Makes the single query table -->
-	<table class="table table-hover">
+	<table class="table table-hover table-condensed">
 	<tr><th>Year </th>
 	<%
 	i=0
@@ -197,7 +211,142 @@ ${date_select('end')}
 <button type="submit" class="btn btn-primary">Count </button>
 </form>
 
+</%def>
 
+<%def name="single_query_form(variables)">
+<%
+   single_query_variables=[]
+   for v in variables:
+       if v[2] in ["single_query_date","single_query_date_difference"]:
+           single_query_variables.append((v[0],v[1]))
+%>
+
+<form action="${config.webroot}single_query" method="POST">
+<br />
+	Get Statistics for:
+                <select name="single_query" id="single_query" class="input-medium">
+		<option value=''>Choose a statistic</option>
+		%for option in single_query_variables:
+		<option value="${option[0]}">${option[1]}</option>
+		%endfor
+		</select>
+		<br />
+	<button type="submit" class="btn btn-primary"> Show Statistic</button>
+</form>
+
+
+</%def>
+
+<%def name="outcome_form(outcomes,dep_var_groupings,dependent_variables)">
+<%
+   numeric_dep_var=[]
+   dep_var_mult=[]
+   outcomes_mult=[]
+
+   for v in outcomes:
+       if v["type"] in ["numeric_multiple"]:
+           outcomes_mult.append(v["name"])
+   for v in dependent_variables:
+       if v[2] in ["numeric","numeric_expression","numeric_date_difference"]:
+           numeric_dep_var.append(v[0])
+       elif v[2]=="numeric_multiple":
+           dep_var_mult.append(v[0])
+       
+%>
+<script type="text/javascript">
+var num=1;
+
+var numeric={'${"':1,'".join(numeric_dep_var)}':1}
+var numeric_multiple={'${"':1,'".join(dep_var_mult)}':1}
+var outcome_multiple={'${"':1,'".join(outcomes_mult)}':1}
+
+function ShowOutcome()
+{
+    var el=document.getElementById('outcome');
+    var value=el.value;
+    var pretty=el.options[el.selectedIndex].text;
+    if (value in outcome_multiple){
+           document.getElementById('outcomecalc').style.display='inline';
+           document.getElementById('outcomecalcExpl').style.display='inline';
+           document.getElementById('outcomecalcExpl').innerHTML='Each patient has many '+pretty+'s, I want to use the  ';
+            
+	}
+       else{
+            document.getElementById('outcomecalc').style.display='None';
+            document.getElementById('outcomecalcExpl').style.display='None';
+      }
+}
+function ShowDepVar(number)
+{
+        var el=document.getElementById('depvar'+number);
+        var value=el.value;
+        var pretty=el.options[el.selectedIndex].text
+        
+
+        if (value in numeric){
+            document.getElementById('depvarcutoff'+number).style.display='inline';
+            document.getElementById('depvarcalc'+number).style.display='None';
+            document.getElementById('depvarcutoff'+number+'Expl').style.display='inline';
+            document.getElementById('depvarcutoff'+number+'Expl').innerHTML='We can create discrete groups for '+pretty+' if you provide a cutoff value';
+            document.getElementById('depvarcalc'+number+'Expl').style.display='None';
+            
+	}
+        else if (value in numeric_multiple){
+            document.getElementById('depvarcutoff'+number).style.display='inline';
+            document.getElementById('depvarcalc'+number).style.display='inline';
+
+           document.getElementById('depvarcutoff'+number+'Expl').style.display='inline';
+           document.getElementById('depvarcutoff'+number+'Expl').innerHTML='We can create discrete groups for '+pretty+' if you provide a cutoff value </br>';
+           document.getElementById('depvarcalc'+number+'Expl').style.display='inline';
+           document.getElementById('depvarcalc'+number+'Expl').innerHTML='Each patient has many '+pretty+'s, I want to use the ';
+            
+	}
+       else{
+            document.getElementById('depvarcutoff'+number).style.display='None';
+            document.getElementById('depvarcalc'+number).style.display='None';
+            document.getElementById('depvarcalc'+number+'Expl').style.display='None';
+            document.getElementById('depvarcutoff'+number+'Expl').style.display='None';
+       }
+}
+</script>
+<form action="${config.webroot}outcome" method="POST">
+
+	<h5> Health Outcomes:</h5>
+                <select name="outcome" id="outcome" onChange="javascript:ShowOutcome()" >
+		<option value=''>Choose an outcome</option>
+		%for option in outcomes:
+		<option value="${option["name"]}">${option["pretty_name"]}</option>
+		%endfor
+		</select>
+		<br />
+                <p id="outcomecalcExpl" style="None"></p>
+                ${calculation("outcomecalc",id="outcomecalc", style="none")} <br />
+
+	<h5> Choose a dependent variable </h5>
+	        <%
+		   i=0
+		%>
+		%for group in dep_var_groupings.keys():
+		
+	             <h5> ${group}</h5>
+		     <select name="depvar" id="depvar${i}" onChange="javascript:ShowDepVar(${i})" >
+		       <option value=''>Choose a dependent variable</option>
+		       %for option in dep_var_groupings[group]:
+		       <option value="${option["name"]}">${option["pretty_name"]}</option>
+		       %endfor
+		     </select>
+                     <br />
+                     <p id="depvarcalc${i}Expl" style="None"></p>
+                      ${calculation("depvarcalc",id="depvarcalc"+str(i), style="none")} <br />
+                     <br />
+	             <p id="depvarcutoff${i}Expl" style="None"></p>
+	             <input type="text" name="depvarcutoff" id="depvarcutoff${i}" style="display: none;" >
+	             <% 
+                     i+=1
+		     %>
+		%endfor
+<button type="submit" class="btn btn-primary">Investigate Outcome </button>
+</form>
 </%def>
 
 <%def name="calculation(na,id='calc',style='inline')">
@@ -548,7 +697,7 @@ function Variable()
 			x+=x_shift
 	
 		
-		label_str='[';
+	        label_str='[';
 		i=0;
 		xaxis=data.xaxis()
 		length=len(xaxis)
@@ -557,7 +706,11 @@ function Variable()
 		else:
 			label_shift=x_shift
 		for v in xaxis:
-			label_str+='['+str(i+0.5-x_shift/2.)+',"'+str(v)+'"],'
+	                if len(v) > 9*x_shift*len(series.keys()):
+	                    v=v[0:9]+"-<br />"+v[9:]
+	                if len(v) > 25*x_shift*len(series.keys()):
+	                    v=v[0:25]+"-<br />"+v[25:]
+			label_str+='['+str(i+x_shift*len(series.keys())/2.)+',"'+str(v)+'"],'
 			i+=1
 		label_str=label_str[0:-1]+']'
 		
@@ -573,6 +726,7 @@ function Variable()
 			values_str='[';
 			i=0
 			for v in timedata[serie]:
+	                       
 				values_str+='['+str(new_dates[i])+','+str(v)+'],'
 				i+=1
 			values_str=values_str[0:-1]+']'
@@ -587,112 +741,58 @@ function Variable()
 			/**
 			 * Wait till dom's finished loading.
 			 */
-			document.observe('dom:loaded',${active}(${number}));
+			//document.observe('dom:loaded',${active}(${number}));
 
-			function bar_chart(number)
+			$(function (){
+			       <%
+				  prefix='';
+				  %>
+                                $.plot($("#container${number}"),[
+				%for s in sorted(series.keys()):
+				${prefix}{data:${series[s]},bars:{show:true, barWidth:${x_shift}},label:"${s}"}
+			       <%
+				  prefix=','
+				  %>
+				%endfor
+			        ],{xaxis:{ticks:${label_str}}});
+			});	
+		
+			function pie_chart()
 			{
-				/**
-				 * Fill series d1 and d2.
-				 */
+                               
+			       <%
+				  prefix='';
+                                  i=0
+				  %>
 
-			    
-				/**
-				 * Draw the graph.
-				 */
-					var f = Flotr.draw($('container'+number),[
-						<%
-						prefix='';
-						%>
-						%for s in sorted(series.keys()):
-						${prefix}{data:${series[s]}, label:'${s}'}
-							<%
-							prefix=','
-							%>
-						
-						%endfor
-						] ,
-						{fontSize:10,
-						bars: {show:true, barWidth:${x_shift}},
-						xaxis:{
-							ticks: ${label_str},
-							min: -0.5,
-							max: ${length},
-							
-							autoscaleMargin: 1
-
-				
-							},
-							HtmlText: false,
-						yaxis:{min:0, autoscaleMargin: 1}
-						}
-
-				);
-			}
-			function pie_chart(number)
-			{
-				// Fill series.
-				<%
-				i=0
-				
-				%>
-				%while i< len(piechart):
-					var d${i}=[[0,${piechart[i]}]]
+                                $.plot($("#container${number}"),[
+			        %while i< len(piechart): 
+					${prefix}{data:${piechart[i]},label:'${xaxis[i]}'}
 					<%
 					i+=1
-					%>
+					prefix=','
+					   %>
 				%endwhile
-	
-				//Draw the graph.
-				var f = Flotr.draw($('container'+number), [
-				<%
-				i=0
-				prefix=''
-				%>
-
-				%while i< len(piechart):
-				${prefix}{data:d${i},label: '${xaxis[i]}'}
-					<%
-					i+=1
-					prefix=',';
-					%>
-				%endwhile
-
-				 ], {
-				HtmlText: false, 
-				grid: {
-				verticalLines: false, 
-				horizontalLines: false
-				},
-				xaxis: {showLabels: false},
-				yaxis: {showLabels: false}, 
-				pie: {show: true}	});
-			}
+				],{series:{pie:{show:true}}});
+			}	
+					
 			function timeline(number)
 			{	/**
 				 * Fill series d1.
 				 */
+
 				<%
-				prefix='';
-				%>
-				var f=Flotr.draw($('container'+number),[ 
-
+				  prefix='';
+				  %>
+                                $.plot($("#container${number}"),[
 				%for s in sorted(timeseries.keys()):
-					${prefix}{data:${timeseries[s]}, label:'${s}'}
-					<%
-					prefix=','
-					%>
+				${prefix}{data:${timeseries[s]},label:"${s}"}
+			       <%
+				  prefix=','
+				  %>
 				%endfor
+			        ],{xaxis:{mode:"time"}});
 
-				],{fontSize:10,
-				xaxis:{
-					mode:'time', 
-					labelsAngle:45
-				},
-				selection: {
-					mode: 'x'
-				},
-				HtmlText: false
-				});
 			}
 	
 
@@ -725,28 +825,17 @@ function Variable()
 	%>
 
 	<script type="text/javascript">
-			/**
-			 * Wait till dom's finished loading.
-			 */
-			document.observe('dom:loaded',timeline());
-			function timeline()
-			{	
-				var f=Flotr.draw(container,[ 
+	  
+            $(function ()
+		{
 
-				{data:${values_str}}
-				],{
-			        fontSize:15,
-				xaxis:{
-					mode:'time', 
-					labelsAngle:45
-				},
-				selection: {
-					mode: 'x'
-				},
-				HtmlText: false
-				});
-			}
+
+                 $.plot($("#container"),[
+		
+		 {data:${values_str}}
 	
+		 ],{xaxis:{mode:"time"}});
+		 });
 
 		</script>
 
@@ -758,7 +847,8 @@ function Variable()
 
 <%def name="distribution_plot(data)">
 
-	<div id="container" style="width:900px;height:400px;"></div>
+	
+        <div id="container_distribute" style="width:900px;height:400px;"></div>
 	<%
 		series={};
 		labels=[];
@@ -774,44 +864,22 @@ function Variable()
 			series[serie]=values_str
 	%>
 		<script type="text/javascript">
-			/**
-			 * Wait till dom's finished loading.
-			 */
-			document.observe('dom:loaded',distribute_chart());
-
-			function distribute_chart()
-			{
-				/**
-				 * Fill series d1 and d2.
-				 */
-
-			    
-				/**
-				 * Draw the graph.
-				 */
-					var f = Flotr.draw($('container'),[
-						<%
-						prefix='';
-						%>
-						%for s in sorted(series.keys()):
-						${prefix}{data:${series[s]}, label:'${s}', lines:{fill:true}}
-							<%
-							prefix=','
-							%>
-						
-						%endfor
-						] ,
-						{fontSize:25,	
-						xaxis:{
-							title:'${variable}'				
-							},
-						yaxis:{min:0, autoscaleMargin: 1}
-						}
-
-				);
-			}
+		
+			$(function (){
+			       <%
+				  prefix='';
+				  %>
+                                $.plot($("#container_distribute"),[
+				%for s in sorted(series.keys()):
+				${prefix}{data:${series[s]},lines:{fill:true},label:"${s}"}
+			       <%
+				  prefix=','
+				  %>
+				%endfor
+			        ],{});
+			});	
 		</script>
-
+                <p align="center">${variable}</p>
 		
 		<!-- analytics -->
 
@@ -828,27 +896,25 @@ function Variable()
 	values_str=values_str[0:-1]+']'
 	xlabel,ylabel=scatter.labels()
 	%>
-	<div id="container" style="width:900px;height:400px;"></div>
+	<div class="row">
+        <div class="span1" style="line-height:20px;line-width:400px">
+	<p id="rotated">${ylabel}</p>
+
+	 </div>
+	<div id="container_scatter" style="width:800px;height:400px;" class="span8"></div>
+	</div>
+        <p align="center">${xlabel}</p>
+
 	<script type="text/javascript">
-	document.observe('dom:loaded', function(){
-	 
-	/**
-	 * Draw the graph.
-	 */
-	var f = Flotr.draw(
-		$('container'),[ 
-			{data:${values_str}, lines:{show:false},points:{show:true}}
+	  $(function (){
+
+          $.plot($("#container_scatter"),[
+	   {data:${values_str}, lines:{show:false},points:{show:true}}
 
 		],{
-	    xaxis:{
-		 title:'${xlabel}'				
-	         },
-	         yaxis:{title:'${ylabel}'},
-		
-            title: 'Scatter plot'
 
 	});
-	});			
+	  });
 	</script>
 </%def>
 <%def name="comparison_table(compare)">
@@ -859,9 +925,10 @@ function Variable()
 
 	
 	<table class="table table-hover table-bordered">
-	<tr><th></th><th>N</th><td>Mean</th><th>P-value</th>
+	<tr><th></th>${compare.var_pretty}<th>N</th><td>Mean</th><th>P-value</th>
 
 	%for i in range(len(mean)):
+                %if subgroups[i]!="Total":
 		<tr><td>${subgroups[i]}</td>
 		  <td>${N[i]}</td>
 		  %if type(mean[i])==float:
@@ -869,21 +936,50 @@ function Variable()
 			       %else:
 			       <td>${"%2.1f" % mean[i]}</td>
 		  %endif
-		  %if type(p_value[i])==float:
-			        %if p_value[i]<0.05:
-						<b>
-				%endif 
-		               <td>${"%2.3f" % p_value[i]}</td>
-			       %else:
-			       <td>${"%2.4f" % p_value[i]}</td>
-			       %if p_value[i]<0.05:
-						</b>
-					
-			       %endif
-		%endif
+                 <td>
+	         %if p_value[i]<1:
+		      %if p_value[i]<0.05:
+			    <b>
+		      %endif
+		      ${"%2.4f" % p_value[i]}
+		      %if p_value[i]<0.05:
+		     </b>
+		     %endif
+	          %else:
+			${p_value[i]}
+		  %endif
+                 </td>
 		</tr>
+		%else:
+		<%
+		   tot=i
+		   %>
+		%endif
 	%endfor
-	
+	  
+		<tr><td>Total</td>
+		  <td>${N[tot]}</td>
+		  %if type(mean[i])==float:
+		               <td>${"%2.1f" % mean[tot]}</td>
+			       %else:
+			       <td>${"%2.1f" % mean[i]}</td>
+		  %endif
+	          <td>
+		  %if type(p_value[tot])==float:
+		      %if p_value[tot]<0.05:
+			    <b>
+		      %endif
+		      ${"%2.4f" % p_value[tot]}
+		      %if p_value[tot]<0.05:
+		     </b>
+		     %endif
+	          %else:
+			${p_value[tot]}
+		  %endif
+			 
+                  </td>
+		</tr>
+		
 	</table>
 </%def>
 
@@ -915,7 +1011,7 @@ function Variable()
 		%endif
 	%endfor
 	</select>
-	<select name="${name}_month" class="input-medium">
+	<select name="${name}_month" class="input-small">
 	%for i in range(1,13):
 		<%
 		if i<10:

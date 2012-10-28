@@ -48,18 +48,18 @@ def single_query(field):
         yearly={}
         for r in result:
             r=r[0]
-
-            month=r.replace(day=1,hour=0,minute=0,second=0)
-            year=r.replace(month=1,day=1,hour=0,minute=0,second=0)
+            if r:
+                month=r.replace(day=1,hour=0,minute=0,second=0)
+                year=r.replace(month=1,day=1,hour=0,minute=0,second=0)
         
-            if month in monthly.keys():
-                monthly[month]+=1
-            else:
-                monthly[month]=1
-            if year in yearly.keys():
-                yearly[year]+=1
-            else:
-                yearly[year]=1
+                if month in monthly.keys():
+                    monthly[month]+=1
+                else:
+                    monthly[month]=1
+                if year in yearly.keys():
+                    yearly[year]+=1
+                else:
+                    yearly[year]=1
         return {'total':total,'monthly':monthly,'yearly':yearly}
     elif field['type']=="single_query_date_difference":
         res=db.query_dict("Select patient_id as id,date_enrolled as date from patient_program where program_id=1")
@@ -130,7 +130,7 @@ def query(fields):
 
     """
     #limit to number of patients
-    l=6000
+
     db=db_connect();
     
     #We need to determine which tables we need to query
@@ -146,6 +146,7 @@ def query(fields):
     data={};
     #Sort out the strings need for the sql queries based on tables
     variables={}
+
     for f in fields:
         variables[f]=variable(f)
         if variables[f]['table']== 'patient':
@@ -158,7 +159,7 @@ def query(fields):
             observation_fields[f]=variables[f]['field'];
     # Find all the information from Patients
    
-    res=db.query_dict('Select '+','.join(['patient_id']+patient_fields.values())+ ' from patient order by patient_id')
+    res=db.query_dict('Select '+','.join(['patient_id']+patient_fields.values())+ ' from patient where voided=0 order by patient_id')
 #    print res
     patients=[i['patient_id'] for i in res];
    
@@ -176,12 +177,12 @@ def query(fields):
 
     # Need start date for each patient. 
 
-    res=db.query_dict("Select "+'patient_id,date_enrolled '+" from patient_program where program_id=1")
+    res=db.query_dict("Select "+'patient_id,date_enrolled '+" from patient_program where program_id=1 and voided=0")
     for r in res:
         data[r['patient_id']]['date']=r['date_enrolled'];
 
     # Find information from person
-    res=db.query_dict("Select "+' , '.join(['person_id']+person_fields.values())+" from person order by person_id")
+    res=db.query_dict("Select "+' , '.join(['person_id']+person_fields.values())+" from person where voided=0 order by person_id")
     for r in res:
         #data[r['pid']]['date']=r['hiv_positive_clinic_start_date'];
         if r['person_id'] in data.keys():
@@ -200,7 +201,7 @@ def query(fields):
 
         #id=db.query_dict("Select id from tests where name=%s",result_fields[f])[0]['id']
         if variables[f]['type']=='numeric_multiple':
-            res=db.query_dict("SELECT obs.person_id,obs.value_numeric,enc.encounter_datetime from obs LEFT JOIN encounter as enc on enc.encounter_id=obs.encounter_id where obs.concept_id = %s ",variables[f]['concept'])
+            res=db.query_dict("SELECT obs.person_id,obs.value_numeric,enc.encounter_datetime from obs LEFT JOIN encounter as enc on enc.encounter_id=obs.encounter_id where obs.concept_id = %s and obs.voided=0 and enc.voided=0",variables[f]['concept'])
 
             temp={}
 
@@ -438,9 +439,26 @@ def list_variables():
         ret.append([line_array[0],line_array[2],line_array[4]]);
     return ret
 
+def list_outcomes_dependent_variables():
+    """
+        Returns a list of all outcomes and dependet variables
+    """
+    f=open(path+'outcomes.txt');
+    outcome=[];
+    for line in f:
+        line_array=line.strip().split('&');
+        outcome.append([line_array[0],line_array[1]]);
+    f.close()
+    f=open(path+'dependent_variables.txt');
+    dep_var=[];
+    for line in f:
+        line_array=line.strip().split('&');
+        dep_var.append([line_array[0],line_array[1]]);
+    f.close()
+    return {'outcome':outcome,'dependent_variables':dep_var}
 
 if __name__=='__main__':
-    print list_variables()
+    print list_outcomes_dependent_variables()
 #    print query(['cd4_count'])
 #    print single_query('admissions')
 

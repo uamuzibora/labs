@@ -1,28 +1,29 @@
+how_many_visits&Number of Visits&Number of Visits&single_query&single_query_date&select encounter_datetime from encounter where form_id=2 and voided=0
+how_many_obs&Number of Observations&Number of Observations&single_query&single_query_date&select obs_datetime from obs where voided=0
+positive_enrollment_avg&pe&Time from HIV Positive to Enrolment in CCC&single_query&single_query_date_difference&select value_datetime as date,person_id as id from obs where concept_id=6259 and voided=0&Select patient_id as id,date_enrolled as date from patient_program where program_id=1
+enrollment_to_elgible_average&po&Time from CCC Enrolment to Eligibility for ART&single_query&single_query_date_difference&Select patient_id as id,date_enrolled as date from patient_program where program_id=1 and voided=0 &select value_datetime as date,person_id as id from obs where concept_id=6260 and voided=0
+elgible_to_art_avg&pe&Time from Eligibility for ART to Start of ART&single_query&single_query_date_difference&select value_datetime as date,person_id as id from obs where concept_id=6259&select start_date as date, patient_id as id from (select start_date,patient_id from orders where discontinued=0 group by start_date,patient_id ) as s
+art&Patients on ART&Patients on ART&single_query&single_query_date&select start_date from (select start_date,patient_id from orders where discontinued=0 and voided=0 group by start_date,patient_id ) as s order by start_date
+art_1_line&Patients on ART Line 1&Patients on 1st Line ART&single_query&single_query_date&select start_date from (select sum(concept_id) as sum,start_date,patient_id from orders where discontinued=0 group by start_date,patient_id and voided=0) as s where (s.sum in (792,6884,1263,1261,6145,6144,2061,2063,6143))  order by start_date
+art_2_line&Patients on ART Line 2&Patients on 2nd Line ART&single_query&single_query_date&select start_date from (select sum(concept_id) as sum,start_date,patient_id from orders where discontinued=0 group by start_date,patient_id and voided=0 ) as s where (s.sum in (2387,2228,2404,2245,1424,2387,1444,2224,2244,2227,1609,2393,2404,7045,7065)) order by start_date
+patients_lost_to_followup&p&Patients Lost to Follow Up&single_query&single_query_date&select date_created from obs where concept_id=6153 and value_coded=5240 and voided=0 order by date_created
+deceased&deceased&Patients Deceased&single_query&single_query_date&select date_created from obs where concept_id=6153 and value_coded=159 and voided=0 order by date_created
+admissions&Admissions&Admissions&single_query&single_query_date&Select date_enrolled from patient_program where voided=0 order by date_enrolled
 height&Height&Height&observation&numeric_multiple&5090
 weight&Weight&Weight&observation&numeric_multiple&5089
 cd4_count&CD4 Count&CD4 Count&observation&numeric_multiple&5497
 sex&gender&Sex&person&text&None
 age&birthdate&Age&person&numeric_expression&int((datetime.date.today()-$var).days/365)
-admissions&Admissions&Admissions&single_query&single_query_date&Select date_enrolled from patient_program order by date_enrolled
-art&Patients on ART&Patients on ART&single_query&single_query_date&select start_date from (select start_date,patient_id from orders where discontinued=0 group by start_date,patient_id ) as s order by start_date
 who_stage&Who Stage&WHO Stage&observation&text_multiple&5356&last&Missing
 inactive_reason&inactive_reason&Inactive Reason&observation&text_multiple&6153&last&Active&no_encounter
-status&Status&Status&observation&boolean&6153&Inactive&Active
-patients_lost_to_followup&p&Lost to followup&single_query&single_query_date&select date_created from obs where concept_id=6153 and value_coded=5240 and voided=0 order by date_created
-deceased&deceasd&Deacesed Patients&single_query&single_query_date&select date_created from obs where concept_id=6153 and value_coded=159 and voided=0 order by date_created
-art_1_line&Patients on ART Line 1&Patients on ART Line 1&single_query&single_query_date&select start_date from (select sum(concept_id) as sum,start_date,patient_id from orders where discontinued=0 group by start_date,patient_id ) as s where (s.sum=792 or s.sum=6884 or s.sum=1263 or s.sum=1261)order by start_date
-art_2_line&Patients on ART Line 2&Patients on ART Line 2&single_query&single_query_date&select start_date from (select sum(concept_id) as sum,start_date,patient_id from orders where discontinued=0 group by start_date,patient_id ) as s where (s.sum=2387 or s.sum=2228 or s.sum=2404 or s.sum=2245)order by start_date
-d4T&Patients on d4T&Patients on d4T&single_query&single_query_date&select start_date from orders where ((concept_id=792 or concept_id=6251) and discontinued=0)
-positive_to_enrollment&po&Positive to Enrollment&date_difference&numeric_date_difference&select value_datetime as date,person_id as id from obs where concept_id=6259&:admission:
-positive_enrollment_avg&pe& Average positive to enrollment&single_query&single_query_date_difference&select value_datetime as date,person_id as id from obs where concept_id=6259&Select patient_id as id,date_enrolled as date from patient_program where program_id=1 
+status&Status&Patient Still Attending Clinic&observation&boolean&6153&Inactive&Active
+positive_to_enrollment&po&Time from HIV Positive to Enrolment in CCC&date_difference&numeric_date_difference&select value_datetime as date,person_id as id from obs where concept_id=6259 and voided=0&:admission:
 entry_point&entry_point&Patient Source&observation&text_multiple&6245&first&Missing
-elgible_to_art&po&Eligible to ART&date_difference&numeric_date_difference&select value_datetime as date,person_id as id from obs where concept_id=6260&select start_date as date, patient_id as id from (select start_date,patient_id from orders where discontinued=0 group by start_date,patient_id ) as s
-elgible_to_art_avg&pe& Average Eligible to ART&single_query&single_query_date_difference&select value_datetime as date,person_id as id from obs where concept_id=6259&select start_date as date, patient_id as id from (select start_date,patient_id from orders where discontinued=0 group by start_date,patient_id ) as s
-enrollment_to_elgible&po&Enrollment to Eligibility&date_difference&numeric_date_difference&:admission:&select value_datetime as date,person_id as id from obs where concept_id=6260
-enrollment_to_elgible_average&po&Enrollment to Eligibility&single_query&single_query_date_difference&Select patient_id as id,date_enrolled as date from patient_program where program_id=1 &select value_datetime as date,person_id as id from obs where concept_id=6260
-on_art&ART&ART Status&free_sql&boolean_sql&select patient_id from (select start_date,patient_id from orders where discontinued=0 group by start_date,patient_id ) as s order by start_date&On ART&Not on ART
-on_d4T&ART&d4T Status&free_sql&boolean_sql&select patient_id from (select start_date,patient_id from orders where ((concept_id=792 or concept_id=6251) and discontinued=0) group by start_date,patient_id ) as s order by start_date&On d4T&Not on d4T
-tb&TB&Ever had TB&observation&boolean&5965&Yes&No&6102
-art_eligible&ART&ART Eligible&free_sql&boolean_sql&select patient_id from patient where patient_id in (select distinct(person_id) from obs where concept_id=5356 and (value_coded=1206 or value_coded=1207)) or patient_id in (select distinct(person_id) from obs where concept_id=5497 and value_numeric<350)&Eligible&Not Eligible
-how_safe_water&how_safe_water&How safe water&observation&text_multiple&6178&first&Missing
-freq_safe_water&freq_safe_water&Frequency of Safe Water&observation&text_multiple&6184&first&Missing
+elgible_to_art&po&Time from Eligibility for ART to Start of ART&date_difference&numeric_date_difference&select value_datetime as date,person_id as id from obs where concept_id=6260 and voided=0&select start_date as date, patient_id as id from (select start_date,patient_id from orders where discontinued=0 and voided=0 group by start_date,patient_id ) as s
+enrollment_to_elgible&po&Time from CCC Enrolment to Eligibility for ART&date_difference&numeric_date_difference&:admission:&select value_datetime as date,person_id as id from obs where concept_id=6260
+on_art&ART&On ART&free_sql&boolean_sql&select patient_id from (select start_date,patient_id from orders where discontinued=0 and voided=0 group by start_date,patient_id ) as s order by start_date&On ART&Not on ART
+on_d4T&ART&Regimen Includes d4T&free_sql&boolean_sql&select patient_id from (select start_date,patient_id from orders where ((concept_id=792 or concept_id=6251) and discontinued=0 and voided=0) group by start_date,patient_id ) as s order by start_date&On d4T&Not on d4T
+tb&TB&Had TB&observation&boolean&5965&Yes&No&6102
+art_eligible&ART&Eligible for ART&free_sql&boolean_sql&select patient_id from patient where patient_id in (select distinct(person_id) from obs where concept_id=5356 and (value_coded=1206 or value_coded=1207) and voided=0) or patient_id in (select distinct(person_id) from obs where concept_id=5497 and value_numeric<350 and voided=0)&Eligible&Not Eligible
+how_safe_water&how_safe_water&Safe Water Method&observation&text_multiple&6178&first&Missing
+freq_safe_water&freq_safe_water&Frequency of Safe Water Method&observation&text_multiple&6184&first&Missing

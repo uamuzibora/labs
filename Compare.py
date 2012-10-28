@@ -156,6 +156,6 @@ select p.pid, first(k.value_decimal),last(k.value_decimal),avg(k.value_decimal) 
 
 
 if __name__=="__main__":
-    d=Compare('age',[])
+    d=Compare('cd4_count',['sex'],'First')
     d._res()
     print d.stat

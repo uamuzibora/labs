@@ -1,0 +1,62 @@
+<%namespace name="util" file="functions.html" />
+<%include file="header.html" />
+<div class="row-fluid">
+  <div class="span3">
+<h4> Health Outcomes </h4>
+${util.outcome_form(content['outcome'],content['dep_var_groupings'],content['variables'])}
+
+  </div>
+  <div class="span9">
+
+%if "data" in content.keys():
+<h4>
+To investigate how ${content["data"].outcome_pretty} depends on ${content["data"].dependent_pretty} we can look at the following types of statitics: </h4>
+
+<%
+   i=0
+   headings={"counting":"Counting statistics","distribution":"Distribution of "+content["data"].outcome_pretty,"comparisson":"Comparisson of "+content["data"].outcome_pretty,"scatter":"Scatter Plot"}
+
+%>
+<div class="accordion" id="accordion2">
+%for key in content["data"].data.keys():
+  <div class="accordion-group">
+    <div class="accordion-heading">
+      <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapse${i}">
+       <h4>${headings[key]}</h4>
+      </a>
+    </div>
+    <div id="collapse${i}" class="accordion-body collapse
+%if len(content["data"].data.keys())==1:
+in
+%endif
+">
+      <div class="accordion-inner">
+       
+%if key=="distribution":
+${util.distribution_plot(content["data"].data[key])}
+%endif
+%if key=="scatter":
+${util.scatter_plot(content["data"].data[key])}
+%endif
+%if key=="comparisson":
+${util.comparison_table(content["data"].data[key])}
+%endif
+%if key=="counting":
+${util.count_table(content["data"].data[key])}
+%endif
+      </div>
+    </div>
+  </div>
+<%
+   i+=1
+%>
+
+%endfor
+</div>
+
+%else:
+<h4>Investigate how a health outcome depends on demographic or clinical variables</h4>
+
+%endif
+<%include file="footer.html" />
+

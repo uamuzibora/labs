@@ -1,0 +1,1086 @@
+<!-- Contains all functions to display input forms, plots and tables -->
+<%!
+	import config
+        import math
+        import string
+%>
+
+<%def name="count_table(data)">
+<!-- Makes the count table -->
+	<table class="table table-hover table-bordered table-condensed">
+	<tr><th></th>
+	<%
+	i=0
+	xaxis=data.xaxis()
+	p=data.probability()
+	       
+	data=data.numbers()
+	
+	
+	%>
+	%for k in sorted(data.keys()):
+		<th>${k}</th>
+	%endfor
+	%if p!=False:
+		<th> P-Value</th>
+	%endif
+	</tr>
+	%while i<len(xaxis):
+		<tr><td>${string.capwords(xaxis[i])}</td>
+		%for k in sorted(data.keys()):
+		<td>${data[k][i]}</td>
+		%endfor
+		%if p!=False:
+		<td>${round(p[xaxis[i]],4)}</td>
+		%endif
+		</tr>
+		<%
+		i+=1
+		%>
+	%endwhile
+
+	</table>
+</%def>
+
+<%def name="single_query_table(data)">
+<!-- Makes the single query table -->
+	<table class="table table-hover table-condensed">
+	<tr><th>Year </th>
+	<%
+	i=0
+	xaxis,numbers=data.yearly()
+	xaxis_2,cumulative=data.yearly_cumulative()
+	%>
+	
+	<th>${data.field['pretty_name']}</th><th>Cumulative</th>
+	
+	</tr>
+	%while i<len(xaxis):
+		<tr><td>${xaxis[i].year}</td>
+
+		<td>${round(numbers[i],1)}</td>
+		<td>${round(cumulative[i],1)}</td>
+
+		</tr>
+		<%
+		i+=1
+		%>
+	%endwhile
+		<tr><td><b>Total</td><td>${data.total()}</td></tr>
+	</table>
+</%def>
+
+<%def name="single_query_form(variables)">
+<%
+   single_query_variables=[]
+   for v in variables:
+       if v[2] in ["single_query_date","single_query_date_difference"]:
+           single_query_variables.append((v[0],v[1]))
+%>
+
+<form action="${config.webroot}single_query" method="POST">
+<br />
+	Get Statistics for:
+                <select name="single_query" id="single_query" class="input-medium">
+		<option value=''>Choose a statistic</option>
+		%for option in single_query_variables:
+		<option value="${option[0]}">${option[1]}</option>
+		%endfor
+		</select>
+		<br />
+	<button type="submit" class="btn btn-primary"> Show Statistic</button>
+</form>
+
+
+</%def>
+
+<%def name="count_form(date,variables)">
+<%
+   numeric=[]
+   numeric_mult=[]
+   variables_include=[] # Variables we want to include in this type of statistics
+   for v in variables:
+       if v[2] in ["numeric","numeric_expression","numeric_date_difference"]:
+           numeric.append(v[0])
+           variables_include.append((v[0],v[1]))
+       elif v[2]=="numeric_multiple":
+           numeric_mult.append(v[0])
+           variables_include.append((v[0],v[1]))
+       elif v[2] in ["boolean","boolean_sql","text","text_multiple"]:
+           variables_include.append((v[0],v[1]))
+%>
+<script type="text/javascript">
+var num=1;
+
+var numeric={'${"':1,'".join(numeric)}':1}
+var numeric_multiple={'${"':1,'".join(numeric_mult)}':1}
+var value_numeric={}
+function ShowCount(group, new_group)
+{
+        var value=document.getElementById('countgroup'+group).value;
+        if (new_group!=0){
+            document.getElementById('countgroup'+new_group).style.display='inline';
+        }
+ 
+        if (value in numeric){
+            document.getElementById('countcutoff'+group).style.display='inline';
+            document.getElementById('countcalc'+group).style.display='None';
+
+            document.getElementById('countcutoff'+group+'Expl').style.display='inline';
+            document.getElementById('countcutoff'+group+'Expl').innerHTML='To group by '+value+' we need a cutoff value';
+            document.getElementById('countcalc'+group+'Expl').style.display='None';
+
+            
+	}
+        else if (value in numeric_multiple){
+            document.getElementById('countcutoff'+group).style.display='inline';
+            document.getElementById('countcalc'+group).style.display='inline';
+
+           document.getElementById('countcutoff'+group+'Expl').style.display='inline';
+           document.getElementById('countcutoff'+group+'Expl').innerHTML='To group by '+value+' we need a cutoff value';
+           document.getElementById('countcalc'+group+'Expl').style.display='inline';
+           document.getElementById('countcalc'+group+'Expl').innerHTML='Each patient has many '+value+'s, I want to use the';
+            
+	}
+       else{
+            document.getElementById('countcutoff'+group).style.display='None';
+            document.getElementById('countcalc'+group).style.display='None';
+            document.getElementById('countcalc'+group+'Expl').style.display='None';
+            document.getElementById('countcutoff'+group+'Expl').style.display='None';
+       }
+}
+</script>
+<form action="${config.webroot}count" method="POST">
+
+<br />
+	Group by:
+                <select name="group" id="countgroup1" onChange="javascript:ShowCount(1,2)" >
+		<option value=''>Choose a group</option>
+		%for option in variables_include:
+		<option value="${option[0]}">${option[1]}</option>
+		%endfor
+		</select>
+		<select name="group" style="display: none;" id="countgroup2" onChange="javascript:ShowCount(2,3)" >
+		<option value=''>Choose a group</option>
+		%for option in variables_include:
+		<option value="${option[0]}">${option[1]}</option>
+		%endfor
+		</select>
+		<select name="group" style="display: none;" id="countgroup3" onChange="javascript:ShowCount(3,0)" >
+		<option value=''>Choose a group</option>
+		%for option in variables_include:
+		<option value="${option[0]}">${option[1]}</option>
+		%endfor
+		</select>
+	
+	<br />
+	
+        <p id="countcalc1Expl" style="None"></p>	
+	${calculation("calc",id="countcalc1",style="None")}
+        <p id="countcutoff1Expl" style="None"><p>
+	<input type="text" name="cutoff" id="countcutoff1" style="display: none;">
+
+        <p id="countcalc2Expl" style="None"></p>
+        ${calculation("calc",id="countcalc2",style="None")}
+	<p id="countcutoff2Expl" style="None"><p>
+	<input type="text" name="cutoff" id="countcutoff2" style="display: none;">
+
+        <p id="countcalc3Expl" style="None"></p>	
+        ${calculation("calc",id="countcalc3",style="None")}
+	<p id="countcutoff3Expl" style="None"><p>
+	<input type="text" name="cutoff" id="countcutoff3" style="display: none;">
+	<br />
+<b>Time period:<br />
+${date_select('start',date=date)}<br />
+to <br />
+${date_select('end')}
+</b>
+<button type="submit" class="btn btn-primary">Count </button>
+</form>
+
+</%def>
+
+<%def name="single_query_form(variables)">
+<%
+   single_query_variables=[]
+   for v in variables:
+       if v[2] in ["single_query_date","single_query_date_difference"]:
+           single_query_variables.append((v[0],v[1]))
+%>
+
+<form action="${config.webroot}single_query" method="POST">
+<br />
+	Get Statistics for:
+                <select name="single_query" id="single_query" class="input-medium">
+		<option value=''>Choose a statistic</option>
+		%for option in single_query_variables:
+		<option value="${option[0]}">${option[1]}</option>
+		%endfor
+		</select>
+		<br />
+	<button type="submit" class="btn btn-primary"> Show Statistic</button>
+</form>
+
+
+</%def>
+
+<%def name="outcome_form(outcomes,dep_var_groupings,dependent_variables)">
+<%
+   numeric_dep_var=[]
+   dep_var_mult=[]
+   outcomes_mult=[]
+
+   for v in outcomes:
+       if v["type"] in ["numeric_multiple"]:
+           outcomes_mult.append(v["name"])
+   for v in dependent_variables:
+       if v[2] in ["numeric","numeric_expression","numeric_date_difference"]:
+           numeric_dep_var.append(v[0])
+       elif v[2]=="numeric_multiple":
+           dep_var_mult.append(v[0])
+       
+%>
+<script type="text/javascript">
+var num=1;
+
+var numeric={'${"':1,'".join(numeric_dep_var)}':1}
+var numeric_multiple={'${"':1,'".join(dep_var_mult)}':1}
+var outcome_multiple={'${"':1,'".join(outcomes_mult)}':1}
+
+function ShowOutcome()
+{
+    var value=document.getElementById('outcome').value;
+    
+    if (value in outcome_multiple){
+           document.getElementById('outcomecalc').style.display='inline';
+           document.getElementById('outcomecalcExpl').style.display='inline';
+           document.getElementById('outcomecalcExpl').innerHTML='Each patient has many '+value+'s, I want to use the <br />';
+            
+	}
+       else{
+            document.getElementById('outcomecalc').style.display='None';
+            document.getElementById('outcomecalcExpl').style.display='None';
+      }
+}
+function ShowDepVar(number)
+{
+        var value=document.getElementById('depvar'+number).value;
+
+        if (value in numeric){
+            document.getElementById('depvarcutoff'+number).style.display='inline';
+            document.getElementById('depvarcalc'+number).style.display='None';
+            document.getElementById('depvarcutoff'+number+'Expl').style.display='inline';
+            document.getElementById('depvarcutoff'+number+'Expl').innerHTML='We can create discrete groups for '+value+' if you provide a cutoff value';
+            document.getElementById('depvarcalc'+number+'Expl').style.display='None';
+            
+	}
+        else if (value in numeric_multiple){
+            document.getElementById('depvarcutoff'+number).style.display='inline';
+            document.getElementById('depvarcalc'+number).style.display='inline';
+
+           document.getElementById('depvarcutoff'+number+'Expl').style.display='inline';
+           document.getElementById('depvarcutoff'+number+'Expl').innerHTML='We can create discrete groups for '+value+' if you provide a cutoff value </br>';
+           document.getElementById('depvarcalc'+number+'Expl').style.display='inline';
+           document.getElementById('depvarcalc'+number+'Expl').innerHTML='Each patient has many '+value+'s, I want to use the <br/ >';
+            
+	}
+       else{
+            document.getElementById('depvarcutoff'+number).style.display='None';
+            document.getElementById('depvarcalc'+number).style.display='None';
+            document.getElementById('depvarcalc'+number+'Expl').style.display='None';
+            document.getElementById('depvarcutoff'+number+'Expl').style.display='None';
+       }
+}
+</script>
+<form action="${config.webroot}outcome" method="POST">
+
+<br />
+	<h3> Chooose Health Outcome:</h3>
+                <select name="outcome" id="outcome" onChange="javascript:ShowOutcome()" >
+		<option value=''>Choose an Outcome</option>
+		%for option in outcomes:
+		<option value="${option["name"]}">${option["pretty_name"]}</option>
+		%endfor
+		</select>
+		<br />
+                <p id="outcomecalcExpl" style="None"></p>
+                ${calculation("outcomecalc",id="outcomecalc", style="none")} <br />
+
+	<h3> Choose a Dependent Variable </h3>
+	You can choose a dependet variable from any of the following groups
+	        <%
+		   i=0
+		%>
+		%for group in dep_var_groupings.keys():
+		
+	             <h4> ${group}</h4>
+		     <select name="depvar" id="depvar${i}" onChange="javascript:ShowDepVar(${i})" >
+		       <option value=''>Choose a dependent variable</option>
+		       %for option in dep_var_groupings[group]:
+		       <option value="${option["name"]}">${option["pretty_name"]}</option>
+		       %endfor
+		     </select>
+                     <br />
+                     <p id="depvarcalc${i}Expl" style="None"></p>
+                      ${calculation("depvarcalc",id="depvarcalc"+str(i), style="none")} <br />
+                     <br />
+	             <p id="depvarcutoff${i}Expl" style="None"></p>
+	             <input type="text" name="depvarcutoff" id="depvarcutoff${i}" style="display: none;" >
+	             <% 
+                     i+=1
+		     %>
+		%endfor
+<button type="submit" class="btn btn-primary">Invesigate Outcome </button>
+</form>
+</%def>
+
+<%def name="calculation(na,id='calc',style='inline')">
+	<select name="${na}" id="${id}" style="display: ${style};" class="input-small" >
+	  <option value='First'>First</option>
+	  <option value='Last'>Last</option>
+	  <option value='Mean'>Mean</option>
+	  <option value='Regression'>Regression</option>
+	</select>
+
+</%def>
+
+<%def name="scatter_form(variables)">
+<%
+   numeric=[]
+   numeric_mult=[]
+   group_by_variables=[]
+   for v in variables:
+       if v[2]=="numeric" or v[2]=="numeric_expression" :
+           numeric.append(v[0])
+           group_by_variables.append((v[0],v[1])) 
+       elif v[2]=="numeric_multiple":
+           numeric_mult.append(v[0])
+           group_by_variables.append((v[0],v[1])) 
+       elif v[2]=="text":
+           group_by_variables.append((v[0],v[1]))  
+
+%>
+
+Choose two variables for a scatter plot
+<script type="text/javascript">
+var num=1;
+
+var numeric_multiple={'${"':1,'".join(numeric_mult)}':1}
+
+function ShowCalc(calc)
+{
+        var value=document.getElementById('scattervariable'+calc).value;
+        if (value in numeric_multiple){
+            document.getElementById('scattercalc'+calc).style.display='inline';
+       }
+       else{
+            document.getElementById('scattercalc'+calc).style.display='None';
+       }
+}
+
+</script>
+<form action="${config.webroot}scatter" method="POST">
+  
+	%for i in range(2):
+		<select name="variables" class="input-medium" id="scattervariable${i}" onChange="javascript:ShowCalc(${i})">
+		<option value=''>Variable</option>
+		%for option in variables:
+			% if 'numeric' in option[2]:
+				<option value="${option[0]}">${option[1]}</option>
+			%endif
+		%endfor
+		</select>
+	${calculation("calc",id="scattercalc"+str(i),style="None")}
+	<br />
+	%endfor
+	
+
+
+
+	<button type="submit" class="btn btn-primary">Scatter</button>
+
+</form>
+
+</%def>
+
+
+<%def name="compare_form(variables)">
+<%
+   numeric=[]
+   numeric_mult=[]
+   group_by_variables=[]
+   for v in variables:
+       if v[2] in ["numeric","numeric_expression","numeric_date_difference"]:
+           numeric.append(v[0])
+           group_by_variables.append((v[0],v[1])) 
+       elif v[2]=="numeric_multiple":
+           numeric_mult.append(v[0])
+           group_by_variables.append((v[0],v[1])) 
+       elif v[2] in ["boolean","boolean_sql","text","text_multiple"]:
+           group_by_variables.append((v[0],v[1]))  
+
+%>
+<script type="text/javascript">
+var num=1;
+
+var numeric={'${"':1,'".join(numeric)}':1}
+var numeric_multiple={'${"':1,'".join(numeric_mult)}':1}
+var value_numeric={}
+function ShowCompare(group, new_group)
+{
+        var value=document.getElementById('comparegroup'+group).value;
+        if (new_group!=0){
+
+            document.getElementById('comparegroup'+new_group).style.display='inline';
+        }
+ 
+        if (value in numeric){
+
+            document.getElementById('comparecutoff'+group+'Expl').style.display='inline';
+            document.getElementById('comparecutoff'+group+'Expl').innerHTML='To group by '+value+' we need a cutoff value';
+            document.getElementById('comparecutoff'+group).style.display='inline';
+            document.getElementById('comparecalc'+group).style.display='None';
+            
+	}
+        else if (value in numeric_multiple){
+            document.getElementById('comparecalc'+group+'Expl').style.display='inline';
+            document.getElementById('comparecalc'+group+'Expl').innerHTML='Each patient has many '+value+'s, I want to use the';
+            document.getElementById('comparecutoff'+group).style.display='inline';
+
+            document.getElementById('comparecutoff'+group+'Expl').style.display='inline';
+            document.getElementById('comparecutoff'+group+'Expl').innerHTML='To group by '+value+' we need a cutoff value';
+
+            document.getElementById('comparecalc'+group).style.display='inline';
+            
+	}
+       else{
+            if (new_group>group){
+	        document.getElementById('comparegroup'+new_group).style.display='None';
+	    }
+            document.getElementById('comparecutoff'+group+'Expl').style.display='None';
+            document.getElementById('comparecalc'+group+'Expl').style.display='None';
+            document.getElementById('comparecutoff'+group).style.display='None';
+            document.getElementById('comparecalc'+group).style.display='None';
+       }
+}
+function Variable()
+{
+       var value=document.getElementById('variable').value;
+       if (value in numeric_multiple){
+            
+            document.getElementById('calcvariable').style.display='inline';
+            document.getElementById('calcvariableExpl').style.display='inline';
+            document.getElementById('calcvariableExpl').innerHTML='Each patient has many '+value+'s, I want to use the';
+            
+	}else{
+            document.getElementById('calcvariableExpl').style.display='None';
+            document.getElementById('calcvariableExpl').innerHTML='';
+            document.getElementById('calcvariable').style.display='None';
+       }
+}
+</script>
+<form action='${config.webroot}compare' method='POST'>
+	<b>Comparison variable:</b>
+	<select name="variables" id="variable" onChange="javascript:Variable()">
+	<option value=''>Choose a Variable</option>
+	%for option in content['variables']:
+		% if 'numeric' in option[2]:
+			<option value="${option[0]}">${option[1]}</option>
+		%endif
+	%endfor
+	</select>
+	<br />
+	<p id="calcvariableExpl" style="None"></p>
+	${calculation("calcvariable",id="calcvariable", style="none")}
+	<br />
+	<b> Group by: </b>
+	
+	<select name="group" id="comparegroup1" onChange="javascript:ShowCompare(1,2)" >
+	  <option value=''>Choose a group</option>
+	  %for option in group_by_variables:
+		<option value="${option[0]}">${option[1]}</option>
+	  %endfor
+	</select>
+	<select name="group" id="comparegroup2" style="display: none;" onChange="javascript:ShowCompare(2,0)" >
+	  <option value=''>Choose a group</option>
+	  %for option in group_by_variables:
+		<option value="${option[0]}">${option[1]}</option>
+	  %endfor
+	</select>
+	<br />
+	<p id="comparecalc1Expl" style="None"></p>
+ ${calculation("calc",id="comparecalc1", style="none")} <br />
+	<p id="comparecutoff1Expl" style="None"></p>
+	<input type="text" name="cutoff" id="comparecutoff1" style="display: none;" >
+	<p id="comparecalc2Expl" style="None"></p>
+ ${calculation("calc",id="comparecalc2", style="none")} <br />
+	<p id="comparecutoff2Expl" style="None"></p>
+	<input type="text" name="cutoff" id="comparecutoff2" style="display: none;" >
+	<br />
+
+
+
+	<button type="submit" class="btn btn-primary">Compare</button>
+</form>	
+
+
+</%def>
+
+
+
+
+<%def name="distribute_form(variables)">
+<%
+   numeric=[]
+   numeric_mult=[]
+   group_by_variables=[]
+   for v in variables:
+       if v[2] in ["numeric","numeric_expression","numeric_date_difference"] :
+           numeric.append(v[0])
+           group_by_variables.append((v[0],v[1])) 
+       elif v[2]=="numeric_multiple":
+           numeric_mult.append(v[0])
+           group_by_variables.append((v[0],v[1])) 
+       elif v[2] in ["boolean_sql","boolean","text","text_multiple"]:
+           group_by_variables.append((v[0],v[1]))  
+
+%>
+<script type="text/javascript">
+var num=1;
+
+var numeric={'${"':1,'".join(numeric)}':1}
+var numeric_multiple={'${"':1,'".join(numeric_mult)}':1}
+var value_numeric={}
+function ShowDistribute(group, new_group)
+{
+        var value=document.getElementById('distributegroup'+group).value;
+        if (new_group!=0){
+
+            document.getElementById('distributegroup'+new_group).style.display='inline';
+        }
+ 
+        if (value in numeric){
+
+            document.getElementById('distributecutoff'+group+'Expl').style.display='inline';
+            document.getElementById('distributecutoff'+group+'Expl').innerHTML='To group by '+value+' we need a cutoff value';
+            document.getElementById('distributecutoff'+group).style.display='inline';
+            document.getElementById('distributecalc'+group).style.display='None';
+            
+	}
+        else if (value in numeric_multiple){
+            document.getElementById('distributecalc'+group+'Expl').style.display='inline';
+            document.getElementById('distributecalc'+group+'Expl').innerHTML='Each patient has many '+value+'s, I want to use the';
+            document.getElementById('distributecutoff'+group).style.display='inline';
+
+            document.getElementById('distributecutoff'+group+'Expl').style.display='inline';
+            document.getElementById('distributecutoff'+group+'Expl').innerHTML='To group by '+value+' we need a cutoff value';
+
+            document.getElementById('distributecalc'+group).style.display='inline';
+            
+	}
+       else{
+            if (new_group>group){
+	        document.getElementById('distributegroup'+new_group).style.display='None';
+	    }
+            document.getElementById('distributecutoff'+group+'Expl').style.display='None';
+            document.getElementById('distributecalc'+group+'Expl').style.display='None';
+            document.getElementById('distributecutoff'+group).style.display='None';
+            document.getElementById('distributecalc'+group).style.display='None';
+       }
+}
+function Variable()
+{
+       var value=document.getElementById('variable').value;
+       if (value in numeric_multiple){
+            
+            document.getElementById('calcvariable').style.display='inline';
+            document.getElementById('calcvariableExpl').style.display='inline';
+            document.getElementById('calcvariableExpl').innerHTML='Each patient has many '+value+'s, I want to use the';
+            
+	}else{
+            document.getElementById('calcvariableExpl').style.display='None';
+            document.getElementById('calcvariableExpl').innerHTML='';
+            document.getElementById('calcvariable').style.display='None';
+       }
+}
+</script>
+<form action='${config.webroot}distribute' method='POST'>
+	<b>Distribution of:</b>
+	<select name="variables" id="variable" onChange="javascript:Variable()">
+	<option value=''>Choose a Variable</option>
+	%for option in content['variables']:
+		% if 'numeric' in option[2]:
+			<option value="${option[0]}">${option[1]}</option>
+		%endif
+	%endfor
+	</select>
+	<br />
+	<p id="calcvariableExpl" style="None"></p>
+	${calculation("calcvariable",id="calcvariable", style="none")}
+	<br />
+	<b> Group by: </b>
+	
+	<select name="group" id="distributegroup1" onChange="javascript:ShowDistribute(1,2)" >
+	  <option value=''>Choose a group</option>
+	  %for option in group_by_variables:
+		<option value="${option[0]}">${option[1]}</option>
+	  %endfor
+	</select>
+	<select name="group" id="distributegroup2" style="display: none;" onChange="javascript:ShowDistribute(2,0)" >
+	  <option value=''>Choose a group</option>
+	  %for option in group_by_variables:
+		<option value="${option[0]}">${option[1]}</option>
+	  %endfor
+	</select>
+	<br />
+	<p id="distributecalc1Expl" style="None"></p>
+ ${calculation("calc",id="distributecalc1", style="none")} <br />
+	<p id="distributecutoff1Expl" style="None"></p>
+	<input type="text" name="cutoff" id="distributecutoff1" style="display: none;" >
+	<p id="distributecalc2Expl" style="None"></p>
+ ${calculation("calc",id="distributecalc2", style="none")} <br />
+	<p id="distributecutoff2Expl" style="None"></p>
+	<input type="text" name="cutoff" id="distributecutoff2" style="display: none;" >
+	<br />
+
+
+
+	<button type="submit" class="btn btn-primary">Distribute</button>
+</form>	
+
+
+</%def>
+
+
+<%def name="count_chart(data,active='bar_chart',number=1)">
+<p style="text-align: center"> <b>Display as: </b>
+<a href="#" onClick="bar_chart(${number})">Bar Chart</a>, <a href="#" onClick="pie_chart(${number})">Pie Chart</a> or
+<a href="#" onClick="timeline(${number})">Timeline</a>
+</p>
+
+	<div id="container${number}" style="width:900px;height:400px;"></div>
+	<%
+		import time,calendar
+		series={};
+		labels=[];
+		numbers=data.numbers();
+	        x_shift=1/float(len(numbers.keys()))
+		x=0
+		piechart=[0 for i in range(len(numbers[numbers.keys()[0]]))]
+
+		
+		for serie in sorted(numbers.keys()):
+			values_str='[';
+			i=0
+				
+			for v in numbers[serie]:
+				piechart[i]+=v
+				values_str+='['+str(i+x)+','+str(v)+'],'
+				i+=1
+			values_str=values_str[0:-1]+']'
+			series[serie]=values_str
+			x+=x_shift
+	
+		
+		label_str='[';
+		i=0;
+		xaxis=data.xaxis()
+		length=len(xaxis)
+		if x_shift==1:
+			label_shift=1
+		else:
+			label_shift=x_shift
+		for v in xaxis:
+			label_str+='['+str(i+0.5-x_shift/2.)+',"'+str(v)+'"],'
+			i+=1
+		label_str=label_str[0:-1]+']'
+		
+		#Fixing the timeline
+		timedata=data.timeline_numbers()
+		dates=data.timeline_xaxis()
+		new_dates=[]
+		timeseries={}
+		for d in dates:
+	                new_dates.append(calendar.timegm(d)*1000)
+		
+		for serie in sorted(timedata.keys()):
+			values_str='[';
+			i=0
+			for v in timedata[serie]:
+				values_str+='['+str(new_dates[i])+','+str(v)+'],'
+				i+=1
+			values_str=values_str[0:-1]+']'
+			timeseries[serie]=values_str
+				
+
+
+			
+	
+	%>
+		<script type="text/javascript">
+			/**
+			 * Wait till dom's finished loading.
+			 */
+			document.observe('dom:loaded',${active}(${number}));
+
+			function bar_chart(number)
+			{
+				/**
+				 * Fill series d1 and d2.
+				 */
+
+			    
+				/**
+				 * Draw the graph.
+				 */
+					var f = Flotr.draw($('container'+number),[
+						<%
+						prefix='';
+						%>
+						%for s in sorted(series.keys()):
+						${prefix}{data:${series[s]}, label:'${s}'}
+							<%
+							prefix=','
+							%>
+						
+						%endfor
+						] ,
+						{fontSize:10,
+						bars: {show:true, barWidth:${x_shift}},
+						xaxis:{
+							ticks: ${label_str},
+							min: -0.5,
+							max: ${length},
+							
+							autoscaleMargin: 1
+
+				
+							},
+							HtmlText: false,
+						yaxis:{min:0, autoscaleMargin: 1}
+						}
+
+				);
+			}
+			function pie_chart(number)
+			{
+				// Fill series.
+				<%
+				i=0
+				
+				%>
+				%while i< len(piechart):
+					var d${i}=[[0,${piechart[i]}]]
+					<%
+					i+=1
+					%>
+				%endwhile
+	
+				//Draw the graph.
+				var f = Flotr.draw($('container'+number), [
+				<%
+				i=0
+				prefix=''
+				%>
+
+				%while i< len(piechart):
+				${prefix}{data:d${i},label: '${xaxis[i]}'}
+					<%
+					i+=1
+					prefix=',';
+					%>
+				%endwhile
+
+				 ], {
+				HtmlText: false, 
+				grid: {
+				verticalLines: false, 
+				horizontalLines: false
+				},
+				xaxis: {showLabels: false},
+				yaxis: {showLabels: false}, 
+				pie: {show: true}	});
+			}
+			function timeline(number)
+			{	/**
+				 * Fill series d1.
+				 */
+				<%
+				prefix='';
+				%>
+				var f=Flotr.draw($('container'+number),[ 
+
+				%for s in sorted(timeseries.keys()):
+					${prefix}{data:${timeseries[s]}, label:'${s}'}
+					<%
+					prefix=','
+					%>
+				%endfor
+
+				],{fontSize:10,
+				xaxis:{
+					mode:'time', 
+					labelsAngle:45
+				},
+				selection: {
+					mode: 'x'
+				},
+				HtmlText: false
+				});
+			}
+	
+
+		</script>
+
+		
+		<!-- analytics -->
+
+	
+</%def>
+
+<%def name="single_query_chart(data)">
+
+	<div id="container" style="width:800px;height:500px;"></div>
+	<%
+		import time,calendar
+	        dates,timedata=data.monthly()
+		#Fixing the timeline
+		new_dates=[]
+		timeseries={}
+		for d in dates:
+	                new_dates.append(calendar.timegm(d.timetuple())*1000)
+		
+	        values_str='[';
+		i=0
+	        for v in timedata:
+	            values_str+='['+str(new_dates[i])+','+str(v)+'],'
+		    i+=1
+		values_str=values_str[0:-1]+']'
+	%>
+
+	<script type="text/javascript">
+			/**
+			 * Wait till dom's finished loading.
+			 */
+			document.observe('dom:loaded',timeline());
+			function timeline()
+			{	
+				var f=Flotr.draw(container,[ 
+
+				{data:${values_str}}
+				],{
+			        fontSize:15,
+				xaxis:{
+					mode:'time', 
+					labelsAngle:45
+				},
+				selection: {
+					mode: 'x'
+				},
+				HtmlText: false
+				});
+			}
+	
+
+		</script>
+
+		
+		<!-- analytics -->
+
+	
+</%def>
+
+<%def name="distribution_plot(data)">
+
+	<div id="container" style="width:900px;height:400px;"></div>
+	<%
+		series={};
+		labels=[];
+	        variable=data.var_pretty;
+		numbers=data.numbers();
+		for serie in sorted(numbers.keys()):
+			values_str='[';
+	                for v in range(len(numbers[serie]['values'])):
+	                        values_str+='['+str(numbers[serie]['labels'][v])+','+str(numbers[serie]['values'][v])+'],'
+	                        values_str+='['+str(numbers[serie]['labels'][v+1])+','+str(numbers[serie]['values'][v])+'],'
+
+			values_str=values_str[0:-1]+']'
+			series[serie]=values_str
+	%>
+		<script type="text/javascript">
+			/**
+			 * Wait till dom's finished loading.
+			 */
+			document.observe('dom:loaded',distribute_chart());
+
+			function distribute_chart()
+			{
+				/**
+				 * Fill series d1 and d2.
+				 */
+
+			    
+				/**
+				 * Draw the graph.
+				 */
+					var f = Flotr.draw($('container'),[
+						<%
+						prefix='';
+						%>
+						%for s in sorted(series.keys()):
+						${prefix}{data:${series[s]}, label:'${s}', lines:{fill:true}}
+							<%
+							prefix=','
+							%>
+						
+						%endfor
+						] ,
+						{fontSize:25,	
+						xaxis:{
+							title:'${variable}'				
+							},
+						yaxis:{min:0, autoscaleMargin: 1}
+						}
+
+				);
+			}
+		</script>
+
+		
+		<!-- analytics -->
+
+	
+</%def>
+
+<%def name="scatter_plot(scatter)">
+	<%
+	x,y,cor=scatter.numbers();
+	values_str='[';
+	
+	for i in range(len(x)):				
+		values_str+='['+str(y[i])+','+str(x[i])+'],'
+	values_str=values_str[0:-1]+']'
+	xlabel,ylabel=scatter.labels()
+	%>
+	<div id="container" style="width:900px;height:400px;"></div>
+	<script type="text/javascript">
+	document.observe('dom:loaded', function(){
+	 
+	/**
+	 * Draw the graph.
+	 */
+	var f = Flotr.draw(
+		$('container'),[ 
+			{data:${values_str}, lines:{show:false},points:{show:true}}
+
+		],{
+	    xaxis:{
+		 title:'${xlabel}'				
+	         },
+	         yaxis:{title:'${ylabel}'},
+		
+            title: 'Scatter plot'
+
+	});
+	});			
+	</script>
+</%def>
+<%def name="comparison_table(compare)">
+	<%
+	mean,p_value,N=compare.numbers()
+	subgroups=compare.labels()
+	%>
+
+	
+	<table class="table table-hover table-bordered">
+	<tr><th></th><th>N</th><td>Mean</th><th>P-value</th>
+
+	%for i in range(len(mean)):
+		<tr><td>${subgroups[i]}</td>
+		  <td>${N[i]}</td>
+		  %if type(mean[i])==float:
+		               <td>${"%2.1f" % mean[i]}</td>
+			       %else:
+			       <td>${"%2.1f" % mean[i]}</td>
+		  %endif
+		  %if type(p_value[i])==float:
+			        %if p_value[i]<0.05:
+						<b>
+				%endif 
+		               <td>${"%2.3f" % p_value[i]}</td>
+			       %else:
+			       <td>${"%2.4f" % p_value[i]}</td>
+			       %if p_value[i]<0.05:
+						</b>
+					
+			       %endif
+		%endif
+		</tr>
+	%endfor
+	
+	</table>
+</%def>
+
+<%def name="date_select(name, date='today')">	
+	<%
+	import datetime
+
+	if date=='today':
+		date=datetime.date.today()
+
+	%>
+	
+	<select name="${name}_day" class="input-mini">
+	%for i in range(1,32):
+		<%
+		if i<10:
+			v='0'+str(i)
+			
+		else:
+			v=i
+		
+		%>
+		%if i==date.day:
+			<option value="${v}" selected="selected">${i}</option>
+		
+		%else:
+			<option value="${v}">${i}</option>
+
+		%endif
+	%endfor
+	</select>
+	<select name="${name}_month" class="input-small">
+	%for i in range(1,13):
+		<%
+		if i<10:
+			v='0'+str(i)
+			
+		else:
+			v=i
+		
+		%>
+		%if i==date.month:
+			<option value="${v}" selected="selected">${datetime.datetime.strftime(datetime.datetime.strptime(str(i),"%m"),"%B")}</option>
+		
+		%else:
+			<option value="${v}">${datetime.datetime.strftime(datetime.datetime.strptime(str(i),"%m"),"%B")}</option>
+		%endif
+	%endfor
+	</select>
+	<select name="${name}_year" class="input-small">
+	%for i in range(1990,2013):
+
+		%if i==date.year:
+			<option value="${i}" selected="selected">${i}</option>
+		
+		%else:
+			<option value="${i}">${i}</option>
+		%endif
+	%endfor
+	</select>
+
+</%def>
+
+
+
+
